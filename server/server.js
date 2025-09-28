@@ -46,6 +46,7 @@ function createApp() {
       origin: [
         process.env.CLIENT_URL,        // http://localhost:8080
         'http://localhost:8080',       // Primary development frontend
+        'https://3ddxtaskmanager.netlify.app',  // Production Netlify frontend
       ].filter(Boolean),
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: true,
