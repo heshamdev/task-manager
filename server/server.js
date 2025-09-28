@@ -41,15 +41,13 @@ function createApp() {
     });
     app.use(limiter);
 
-    // CORS configuration
-    // app.use(cors({
-    //     origin: process.env.CLIENT_URL || 'http://localhost:8080',
-    //     credentials: true
-    // }));
-    // ✅ allow your frontend Netlify domain
+    // CORS configuration - Allow development and production ports
     app.use(cors({
-      origin: "https://3ddxtaskmanager.netlify.app",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      origin: [
+        process.env.CLIENT_URL,        // http://localhost:8080
+        'http://localhost:8080',       // Primary development frontend
+      ].filter(Boolean),
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: true,
     }));
 
@@ -121,7 +119,7 @@ function createApp() {
  * 
  * @param {number} port - Port number to listen on
  */
-async function startServer(port = process.env.PORT || 5000) {
+async function startServer(port = process.env.PORT || 3000) {
     try {
         // Connect to database
         await connectDB();

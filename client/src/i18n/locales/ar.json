@@ -3,6 +3,7 @@
     "home": "الرئيسية",
     "save": "حفظ",
     "cancel": "إلغاء",
+    "close": "إغلاق",
     "delete": "حذف",
     "edit": "تعديل",
     "create": "إنشاء",
@@ -15,7 +16,8 @@
   },
   "nav": {
     "tasks": "المهام",
-    "calendar": "التقويم"
+    "calendar": "التقويم",
+    "admin": "الإدارة"
   },
   "calendar": {
     "title": "التقويم",
@@ -60,7 +62,13 @@
     "yourTasks": "مهامك",
     "noTasks": "لا توجد مهام بعد",
     "createFirstTask": "أنشئ مهمتك الأولى للبدء",
-    "statistics": "الإحصائيات"
+    "statistics": "الإحصائيات",
+    "titlePlaceholder": "أدخل عنوان المهمة",
+    "descriptionPlaceholder": "أدخل وصف المهمة",
+    "markComplete": "تعليم كمكتملة",
+    "markPending": "تعليم كمعلقة",
+    "deleteTask": "حذف المهمة",
+    "noDescription": "لا يوجد وصف"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
@@ -84,6 +92,9 @@
     "maxValue": "يجب ألا يتجاوز حقل {field} {max}",
     "futureDate": "يجب أن يكون تاريخ الاستحقاق اليوم أو في المستقبل",
     "pastDate": "لا يمكن أن يكون تاريخ الاستحقاق في الماضي",
+    "pastDateWithDays": "تاريخ الاستحقاق متأخر بـ {days} أيام",
+    "futureDateTooFar": "لا يمكن أن يكون تاريخ الاستحقاق أكثر من 5 سنوات في المستقبل",
+    "invalidDate": "يرجى إدخال تاريخ صحيح",
     "passwordComplexity": "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل وحرف صغير واحد ورقم واحد على الأقل",
     "fields": {
       "email": "البريد الإلكتروني",
@@ -107,5 +118,52 @@
     "previous": "السابق",
     "next": "التالي",
     "goToPage": "الذهاب إلى الصفحة"
+  },
+  "admin": {
+    "dashboard": "لوحة تحكم الإدارة",
+    "subtitle": "مراقبة النظام وسجلات نشاط المستخدمين",
+    "userLogs": "سجلات نشاط المستخدمين",
+    "refresh": "تحديث",
+    "export": "تصدير",
+    "filterLevel": "تصفية حسب المستوى",
+    "search": "البحث في السجلات...",
+    "itemsPerPage": "عناصر في الصفحة",
+    "loadingLogs": "جارٍ تحميل السجلات...",
+    "errorTitle": "خطأ في تحميل السجلات",
+    "noFilteredLogs": "لا توجد سجلات تطابق المرشحات",
+    "noLogs": "لا توجد سجلات متاحة",
+    "logLevel": "مستوى السجل",
+    "timestamp": "الطابع الزمني",
+    "message": "الرسالة",
+    "showDetails": "عرض التفاصيل",
+    "hideDetails": "إخفاء التفاصيل",
+    "exportSuccess": "تم تصدير السجلات بنجاح",
+    "exportError": "فشل في تصدير السجلات",
+    "accessDenied": "تم رفض الوصول. مطلوب صلاحيات إدارية."
+  },
+  "theme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "switchToLight": "التبديل إلى الوضع الفاتح",
+    "switchToDark": "التبديل إلى الوضع الداكن",
+    "auto": "تلقائي"
+  },
+  "language": {
+    "english": "English",
+    "arabic": "العربية",
+    "switchTo": "التبديل إلى",
+    "currentLanguage": "اللغة الحالية"
+  },
+  "dates": {
+    "today": "اليوم",
+    "tomorrow": "غداً",
+    "yesterday": "أمس",
+    "inDays": "خلال {days} أيام",
+    "daysAgo": "منذ {days} أيام",
+    "locale": "ar-SA",
+    "overdue": "متأخر",
+    "dueToday": "مستحق اليوم",
+    "dueTomorrow": "مستحق غداً",
+    "dueSoon": "مستحق قريباً"
   }
 }

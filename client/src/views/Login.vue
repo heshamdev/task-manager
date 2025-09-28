@@ -1,5 +1,11 @@
 <template>
   <v-container fluid class="login-page">
+    <!-- Theme Controls positioned at top-right for better visibility -->
+    <div class="theme-controls-overlay">
+      <ThemeSwitcher />
+      <LanguageSwitcher />
+    </div>
+
     <v-row justify="center" align="center" class="fill-height">
       <v-col cols="12" sm="8" md="6" lg="4" xl="3">
         <v-card elevation="8" class="auth-card">
@@ -90,6 +96,8 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Field as VeeField, Form as VeeForm, ErrorMessage as VeeErrorMessage } from 'vee-validate'
 import { useLoader } from '../composables/useLoader.js'
+import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import api from '../services/api'
 
 const router = useRouter()
@@ -183,15 +191,115 @@ async function onSubmit(values, { setErrors }) {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 0 !important;
+  position: relative;
+  transition: background 0.3s ease;
 }
 
-.fill-height {
-  min-height: 100vh;
+/* Dark theme for login page */
+.dark-theme .login-page {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
 }
 
 .auth-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 16px !important;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Dark theme for auth card */
+.dark-theme .auth-card {
+  background: rgba(30, 30, 30, 0.95) !important;
+  color: #ffffff !important;
+}
+
+/* Dark theme for form elements */
+.dark-theme .v-text-field {
+  color: #ffffff !important;
+}
+
+.dark-theme .v-text-field .v-field__input {
+  color: #ffffff !important;
+}
+
+.dark-theme .v-text-field .v-field__outline {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dark-theme .v-text-field .v-label {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark-theme .v-card-title {
+  color: #ffffff !important;
+}
+
+.dark-theme .v-btn {
+  color: #ffffff !important;
+}
+
+.theme-controls-overlay {
+  position: fixed;
+  top: var(--spacing-xl);
+  right: var(--spacing-xl);
+  z-index: 1000;
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+/* RTL Support for theme controls */
+.rtl .theme-controls-overlay {
+  right: auto;
+  left: var(--spacing-xl);
+  flex-direction: row-reverse;
+}
+
+.fill-height {
+  min-height: 100vh;
+}
+
+/* Enhanced RTL Support for Login Page */
+.rtl .auth-card {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+}
+
+.rtl .v-card-title {
+  font-family: 'Tajawal', 'Cairo', 'IBM Plex Sans Arabic', sans-serif;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.rtl .v-card-subtitle {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  line-height: 1.75;
+  text-align: center;
+}
+
+.rtl .v-text-field {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+}
+
+.rtl .v-text-field .v-field__input {
+  text-align: right;
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  line-height: 1.75;
+}
+
+.rtl .v-label {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  font-weight: 500;
+}
+
+.rtl .v-btn {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.rtl .v-alert {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  line-height: 1.75;
 }
 </style>

@@ -4,9 +4,12 @@ import router from './router'
 import i18n from './i18n'
 import vuetify from './plugins/vuetify'
 
-console.log('🚀 Starting application...')
-console.log('🌐 Initial i18n locale:', i18n.global.locale)
-console.log('📚 Available locales:', Object.keys(i18n.global.messages))
+// Import professional Arabic typography styles
+import './styles/arabic-typography.css'
+
+// Import global spacing system
+import './styles/spacing.css'
+
 
 // Function to update document title based on language and current route
 function updateDocumentTitle(locale, routePath = '/') {
@@ -34,7 +37,6 @@ function updateDocumentTitle(locale, routePath = '/') {
   }
   
   document.title = getPageTitle(routePath, locale)
-  console.log('📄 Document title updated:', document.title)
 }
 
 // Function to update document direction and RTL class
@@ -44,16 +46,18 @@ function updateDocumentDirection(locale) {
     html.setAttribute('lang', 'ar')
     html.setAttribute('dir', 'rtl')
     html.classList.add('rtl')
-    console.log('🔄 RTL activated for Arabic')
   } else {
     html.setAttribute('lang', 'en')
     html.setAttribute('dir', 'ltr')
     html.classList.remove('rtl')
-    console.log('🔄 LTR activated for English')
   }
 }
 
 // Apply initial direction
+const savedLanguage = localStorage.getItem('language') || 'en'
+if (savedLanguage === 'ar') {
+  i18n.global.locale = 'ar'
+}
 updateDocumentDirection(i18n.global.locale)
 
 // VeeValidate
@@ -75,56 +79,63 @@ defineRule('confirmed', confirmed)
 // Custom password complexity validation
 defineRule('passwordComplexity', (value) => {
   if (!value) return true // Let required rule handle empty values
-  
+
   const hasLowercase = /[a-z]/.test(value)
   const hasUppercase = /[A-Z]/.test(value)
   const hasNumber = /\d/.test(value)
   const hasMinLength = value.length >= 6
-  
-  const errors = []
-  
-  if (!hasMinLength) {
-    errors.push('at least 6 characters')
+
+  if (!hasMinLength || !hasLowercase || !hasUppercase || !hasNumber) {
+    return i18n.global.t('validation.passwordComplexity')
   }
-  if (!hasLowercase) {
-    errors.push('one lowercase letter')
-  }
-  if (!hasUppercase) {
-    errors.push('one uppercase letter')
-  }
-  if (!hasNumber) {
-    errors.push('one number')
-  }
-  
-  if (errors.length > 0) {
-    return `Password must contain: ${errors.join(', ')}`
-  }
-  
+
   return true
 })
 
-// Custom validation rule for future dates
+// Enhanced validation rule for future dates with i18n support
 defineRule('futureDate', (value) => {
   if (!value) return true // Allow empty values (use required rule separately)
-  
+
   const selectedDate = new Date(value)
   const today = new Date()
   today.setHours(0, 0, 0, 0) // Reset time to start of day
-  
-  if (selectedDate < today) {
-    return 'The due date must be today or in the future'
+
+  // Check if date is valid
+  if (isNaN(selectedDate.getTime())) {
+    return i18n.global.t('validation.invalidDate')
   }
-  
+
+  // Check if date is not too far in the past
+  const minDate = new Date(today)
+  minDate.setDate(today.getDate() - 1) // Allow yesterday
+
+  if (selectedDate < minDate) {
+    const diffDays = Math.ceil((minDate - selectedDate) / (1000 * 60 * 60 * 24))
+    if (diffDays === 1) {
+      return i18n.global.t('validation.pastDate')
+    } else {
+      return i18n.global.t('validation.pastDateWithDays', { days: diffDays })
+    }
+  }
+
+  // Check if date is not too far in the future (optional - prevent unrealistic dates)
+  const maxDate = new Date(today)
+  maxDate.setFullYear(today.getFullYear() + 5) // 5 years max
+
+  if (selectedDate > maxDate) {
+    return i18n.global.t('validation.futureDateTooFar')
+  }
+
   return true
 })
 defineRule('validDate', (value) => {
   if (!value) return true // Allow empty values
-  
+
   const date = new Date(value)
   if (isNaN(date.getTime())) {
-    return 'Please enter a valid date'
+    return i18n.global.t('validation.invalidDate')
   }
-  
+
   return true
 })
 
@@ -172,12 +183,25 @@ app.use(router)
 app.use(i18n)
 app.use(vuetify)
 
-console.log('✅ Vue plugins registered (Router, i18n, Vuetify)')
+// Initialize theme after app is mounted
+setTimeout(() => {
+  // Initialize theme
+  const savedTheme = localStorage.getItem('theme') || 'light'
+  const html = document.documentElement
+  const body = document.body
+
+  if (savedTheme === 'dark') {
+    html.classList.add('dark-theme')
+    body.classList.add('dark-theme')
+  } else {
+    html.classList.add('light-theme')
+    body.classList.add('light-theme')
+  }
+
+}, 100)
+
 
 // Verify plugins are installed
-console.log('🔌 Router installed:', !!app._router)
-console.log('🌐 i18n installed:', !!app._i18n)
-console.log('🎨 Vuetify installed:', !!app._vuetify)
 
 // Apply initial title with current route
 const initialLocale = i18n?.global?.locale || 'en'
@@ -193,6 +217,3 @@ router.afterEach((to) => {
 
 app.mount('#app')
 
-console.log('🎉 App mounted successfully!')
-console.log('🌐 Locale after mount:', i18n?.global?.locale || 'EN')
-console.log('📱 Document direction after mount:', document.documentElement.getAttribute('dir') || 'ltr')

@@ -3,6 +3,7 @@
     "home": "Home",
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
@@ -15,7 +16,8 @@
   },
   "nav": {
     "tasks": "Tasks",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "admin": "Admin"
   },
   "calendar": {
     "title": "Calendar",
@@ -60,7 +62,13 @@
     "yourTasks": "Your Tasks",
     "noTasks": "No tasks yet",
     "createFirstTask": "Create your first task to get started",
-    "statistics": "Statistics"
+    "statistics": "Statistics",
+    "titlePlaceholder": "Enter task title",
+    "descriptionPlaceholder": "Enter task description",
+    "markComplete": "Mark as Complete",
+    "markPending": "Mark as Pending",
+    "deleteTask": "Delete Task",
+    "noDescription": "No description"
   },
   "errors": {
     "required": "This field is required",
@@ -83,6 +91,9 @@
     "minValue": "The {field} must be at least {min}",
     "maxValue": "The {field} must not exceed {max}",
     "futureDate": "The due date must be today or in the future",
+    "pastDate": "Due date cannot be in the past",
+    "pastDateWithDays": "Due date is {days} days in the past",
+    "futureDateTooFar": "Due date cannot be more than 5 years in the future",
     "passwordComplexity": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     "validationFailed": "Validation failed",
     "invalidDate": "Please enter a valid date",
@@ -108,5 +119,38 @@
     "previous": "Previous",
     "next": "Next",
     "goToPage": "Go to page"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode",
+    "auto": "Auto"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "subtitle": "System monitoring and user activity logs",
+    "userLogs": "User Activity Logs",
+    "refresh": "Refresh",
+    "export": "Export",
+    "filterLevel": "Filter by Level",
+    "search": "Search logs...",
+    "itemsPerPage": "Items per page",
+    "loadingLogs": "Loading logs...",
+    "errorTitle": "Error Loading Logs",
+    "noFilteredLogs": "No logs match your filters",
+    "noLogs": "No logs available"
+  },
+  "dates": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
+    "inDays": "In {days} days",
+    "daysAgo": "{days} days ago",
+    "locale": "en-US",
+    "overdue": "Overdue",
+    "dueToday": "Due Today",
+    "dueTomorrow": "Due Tomorrow",
+    "dueSoon": "Due Soon"
   }
 }

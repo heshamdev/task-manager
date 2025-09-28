@@ -28,7 +28,7 @@ router.get('/logs', async (req, res) => {
     const logFilePath = process.env.LOG_FILE_PATH || path.join(process.cwd(), 'logs/app.log');
 
     if (!fs.existsSync(logFilePath)) {
-      return res.json({ success: true, data: { lines: [], message: 'Log file not found or empty' } });
+      return res.json({ success: true, logs: [], message: 'Log file not found or empty' });
     }
 
     const content = fs.readFileSync(logFilePath, 'utf8');
@@ -38,10 +38,43 @@ router.get('/logs', async (req, res) => {
     // Log admin access
     logger.logUserAction(req.userId, 'VIEW_LOGS', { linesReturned: lines.length }, req.ip);
 
-    return res.json({ success: true, data: { lines } });
+    return res.json({ success: true, logs: lines });
   } catch (error) {
     logger.error('Read logs error:', error);
     return res.status(500).json({ success: false, message: req.t('errors.serverError') || 'Internal server error' });
+  }
+});
+
+/**
+ * Delete all application logs
+ * Clears the external log file (admin-only)
+ *
+ * @route DELETE /api/admin/logs
+ * @returns {Object} Success response
+ */
+router.delete('/logs', async (req, res) => {
+  try {
+    const logFilePath = process.env.LOG_FILE_PATH || path.join(process.cwd(), 'logs/app.log');
+
+    // Check if log file exists
+    if (fs.existsSync(logFilePath)) {
+      // Clear the log file by writing an empty string
+      fs.writeFileSync(logFilePath, '');
+    }
+
+    // Log admin action
+    logger.logUserAction(req.userId, 'DELETE_ALL_LOGS', {}, req.ip);
+
+    return res.json({
+      success: true,
+      message: req.t('admin.logsDeleted') || 'All logs have been deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Delete logs error:', error);
+    return res.status(500).json({
+      success: false,
+      message: req.t('errors.serverError') || 'Internal server error'
+    });
   }
 });
 

@@ -1,6 +1,7 @@
 <template>
-  <v-container fluid class="tasks-page">
-    <v-row>
+  <div class="tasks-page">
+    <v-container fluid>
+      <v-row>
       <!-- Sidebar - Task Creation -->
       <v-col cols="12" md="4" lg="3">
         <v-card elevation="4" class="task-form-card">
@@ -23,7 +24,7 @@
                   prepend-inner-icon="mdi-format-title"
                   variant="outlined"
                   :error-messages="errorMessage"
-                  placeholder="Enter task title"
+                  :placeholder="$t('tasks.titlePlaceholder')"
                   class="mb-4"
                 />
               </VeeField>
@@ -39,7 +40,7 @@
                   prepend-inner-icon="mdi-text"
                   variant="outlined"
                   rows="3"
-                  placeholder="Enter task description"
+                  :placeholder="$t('tasks.descriptionPlaceholder')"
                   class="mb-4"
                 />
               </VeeField>
@@ -63,7 +64,7 @@
               
               <v-select
                 v-model="form.priority"
-                :label="$t('tasks.priority')"
+                :label="$t('common.priority')"
                 :items="priorityOptions"
                 item-title="text"
                 item-value="value"
@@ -78,6 +79,8 @@
                 size="large"
                 block
                 prepend-icon="mdi-plus"
+                :disabled="isLoadingTasks"
+                :loading="isLoadingTasks"
               >
                 {{ $t('tasks.createTask') }}
               </v-btn>
@@ -122,12 +125,38 @@
 
       <!-- Main Content - Tasks List/Calendar -->
       <v-col cols="12" md="8" lg="9">
-        <v-card elevation="4" class="tasks-list-card">
+        <v-card elevation="4" class="tasks-list-card position-relative">
+          <!-- Loading Overlay -->
+          <v-overlay
+            v-model="isLoadingTasks"
+            class="task-list-overlay"
+            persistent
+            contained
+          >
+            <div class="loading-content">
+              <div class="loading-spinner-container">
+                <v-progress-circular
+                  color="primary"
+                  size="80"
+                  width="8"
+                  indeterminate
+                  class="loading-spinner"
+                ></v-progress-circular>
+                <v-icon class="loading-icon" size="32" color="primary">mdi-clipboard-list</v-icon>
+              </div>
+              <div class="loading-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
+            </div>
+          </v-overlay>
+
           <v-card-title class="d-flex align-center">
             <v-icon left color="primary">mdi-clipboard-list</v-icon>
             <span class="text-h5">{{ $t('tasks.yourTasks') }}</span>
             <v-spacer></v-spacer>
-            <v-chip color="primary" variant="outlined" class="mr-2">
+            <v-chip color="primary" variant="outlined" size="small" class="mr-2 header-chip">
               {{ tasks.length }} {{ $t('tasks.total') }}
             </v-chip>
           </v-card-title>
@@ -136,58 +165,66 @@
           <v-card-text v-if="tasks.length > 0" class="pa-0">
             <v-list>
               <v-list-item
-                v-for="task in tasks"
+                v-for="task in sortedTasks"
                 :key="task._id"
                 class="task-item"
-                :class="{ 'task-completed': task.status === 'completed' }"
+                :class="{
+                  'task-completed': task.status === 'completed',
+                  'has-overdue-task': getDueDateUrgency(task.dueDate) === 'overdue',
+                  'has-due-today': getDueDateUrgency(task.dueDate) === 'today'
+                }"
               >
                 <template v-slot:prepend>
-                  <v-btn
-                    :icon="task.status === 'completed' ? 'mdi-check-circle' : 'mdi-circle-outline'"
-                    :color="task.status === 'completed' ? 'success' : 'grey'"
-                    variant="text"
-                    @click="toggle(task)"
+                  <v-checkbox
+                    :model-value="task.status === 'completed'"
+                    @update:model-value="(value) => handleTaskToggle(task, value)"
+                    :disabled="task.status === 'expired'"
+                    color="success"
+                    hide-details
+                    density="compact"
+                    class="task-checkbox"
+                    :class="{ 'task-expired': task.status === 'expired' }"
                   />
                 </template>
 
-                <v-list-item-content>
-                  <v-list-item-title 
-                    class="task-title"
-                    :class="{ 'text-decoration-line-through': task.status === 'completed' }"
+                <v-list-item-title
+                  class="task-title"
+                  :class="{ 'text-decoration-line-through': task.status === 'completed' }"
+                >
+                  {{ task.title }}
+                </v-list-item-title>
+                <v-list-item-subtitle v-if="task.description" class="task-description">
+                  {{ task.description }}
+                </v-list-item-subtitle>
+                <div class="d-flex align-center mt-2">
+                  <v-chip
+                    :color="getPriorityColor(task.priority)"
+                    size="small"
+                    variant="outlined"
+                    class="task-chip"
                   >
-                    {{ task.title }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle v-if="task.description" class="task-description">
-                    {{ task.description }}
-                  </v-list-item-subtitle>
-                  <div class="d-flex align-center mt-2">
-                    <v-chip
-                      :color="getPriorityColor(task.priority)"
-                      size="x-small"
-                      variant="outlined"
-                    >
-                      {{ task.priority }}
-                    </v-chip>
-                    <v-chip
-                      :color="task.status === 'completed' ? 'success' : 'warning'"
-                      size="x-small"
-                      variant="outlined"
-                      class="ml-2"
-                    >
-                      {{ task.status }}
-                    </v-chip>
-                    <v-chip
-                      v-if="task.dueDate"
-                      color="info"
-                      size="x-small"
-                      variant="outlined"
-                      class="ml-2"
-                    >
-                      <v-icon size="x-small" left>mdi-calendar</v-icon>
-                      {{ formatDate(task.dueDate) }}
-                    </v-chip>
-                  </div>
-                </v-list-item-content>
+                    {{ getPriorityText(task.priority) }}
+                  </v-chip>
+                  <v-chip
+                    :color="task.status === 'completed' ? 'success' : task.status === 'expired' ? 'error' : 'warning'"
+                    size="small"
+                    variant="outlined"
+                    class="ml-2 task-chip"
+                  >
+                    {{ getStatusText(task.status) }}
+                  </v-chip>
+                  <v-chip
+                    v-if="task.dueDate"
+                    :color="getUrgencyColor(task.dueDate)"
+                    size="small"
+                    variant="outlined"
+                    class="ml-2 task-chip due-date-chip"
+                    :class="`urgency-${getDueDateUrgency(task.dueDate)}`"
+                  >
+                    <v-icon size="small" class="chip-icon">mdi-calendar</v-icon>
+                    {{ formatDate(task.dueDate) }}
+                  </v-chip>
+                </div>
 
                 <template v-slot:append>
                   <div class="task-actions">
@@ -196,19 +233,19 @@
                       :color="task.status === 'completed' ? 'warning' : 'success'"
                       variant="text"
                       @click="toggle(task)"
-                      :title="task.status === 'completed' ? 'Mark as Pending' : 'Mark as Complete'"
+                      :title="task.status === 'completed' ? $t('tasks.markPending') : $t('tasks.markComplete')"
                     />
                     <v-btn
                       icon="mdi-delete"
                       color="error"
                       variant="text"
                       @click="deleteTask(task)"
-                      title="Delete Task"
+                      :title="$t('tasks.deleteTask')"
                     />
                   </div>
                 </template>
 
-                <v-divider v-if="task !== tasks[tasks.length - 1]" class="mt-2" />
+                <v-divider v-if="task !== sortedTasks[sortedTasks.length - 1]" class="mt-2" />
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -237,7 +274,7 @@
           <v-list>
             <v-list-item>
               <v-list-item-title>{{ $t('tasks.description') }}</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedTask?.description || 'No description' }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ selectedTask?.description || $t('tasks.noDescription') }}</v-list-item-subtitle>
             </v-list-item>
             
             <v-list-item>
@@ -246,19 +283,19 @@
             </v-list-item>
             
             <v-list-item>
-              <v-list-item-title>{{ $t('tasks.priority') }}</v-list-item-title>
+              <v-list-item-title>{{ $t('common.priority') }}</v-list-item-title>
               <v-list-item-subtitle>
-                <v-chip :color="getPriorityColor(selectedTask?.priority)" size="small">
-                  {{ selectedTask?.priority }}
+                <v-chip :color="getPriorityColor(selectedTask?.priority)" size="small" class="dialog-chip">
+                  {{ getPriorityText(selectedTask?.priority) }}
                 </v-chip>
               </v-list-item-subtitle>
             </v-list-item>
-            
+
             <v-list-item>
-              <v-list-item-title>{{ $t('tasks.status') }}</v-list-item-title>
+              <v-list-item-title>{{ $t('common.status') }}</v-list-item-title>
               <v-list-item-subtitle>
-                <v-chip :color="selectedTask?.status === 'completed' ? 'success' : 'warning'" size="small">
-                  {{ selectedTask?.status }}
+                <v-chip :color="selectedTask?.status === 'completed' ? 'success' : selectedTask?.status === 'expired' ? 'error' : 'warning'" size="small" class="dialog-chip">
+                  {{ getStatusText(selectedTask?.status) }}
                 </v-chip>
               </v-list-item-subtitle>
             </v-list-item>
@@ -276,7 +313,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+    </v-container>
+  </div>
 </template>
 
 <script setup>
@@ -294,34 +332,191 @@ const form = reactive({ title: '', description: '', dueDate: '', priority: 'medi
 const formError = ref('')
 const showTaskDetails = ref(false)
 const selectedTask = ref(null)
-// Priority options for the select dropdown
-const priorityOptions = [
-  { text: 'Low Priority', value: 'low' },
-  { text: 'Medium Priority', value: 'medium' },
-  { text: 'High Priority', value: 'high' }
-]
+const isLoadingTasks = ref(true)
+// Priority options for the select dropdown with i18n
+const priorityOptions = computed(() => [
+  { text: $t('tasks.low'), value: 'low' },
+  { text: $t('tasks.medium'), value: 'medium' },
+  { text: $t('tasks.high'), value: 'high' }
+])
+
+// Computed property to sort tasks by urgency and priority
+const sortedTasks = computed(() => {
+  return [...tasks.value].sort((a, b) => {
+    // First, prioritize incomplete tasks
+    if (a.status === 'completed' && b.status !== 'completed') return 1
+    if (a.status !== 'completed' && b.status === 'completed') return -1
+
+    // For incomplete tasks, sort by due date urgency
+    if (a.status !== 'completed' && b.status !== 'completed') {
+      const urgencyA = getDueDateUrgency(a.dueDate)
+      const urgencyB = getDueDateUrgency(b.dueDate)
+
+      // Define urgency order (higher number = more urgent)
+      const urgencyOrder = {
+        overdue: 6,
+        today: 5,
+        tomorrow: 4,
+        soon: 3,
+        upcoming: 2,
+        future: 1,
+        none: 0
+      }
+
+      const urgencyDiff = urgencyOrder[urgencyB] - urgencyOrder[urgencyA]
+      if (urgencyDiff !== 0) return urgencyDiff
+
+      // If urgency is the same, sort by priority
+      const priorityOrder = { high: 3, medium: 2, low: 1 }
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
+      if (priorityDiff !== 0) return priorityDiff
+
+      // Finally, sort by due date (earlier dates first)
+      if (a.dueDate && b.dueDate) {
+        return new Date(a.dueDate) - new Date(b.dueDate)
+      }
+    }
+
+    return 0
+  })
+})
 
 // Function to get priority color
 function getPriorityColor(priority) {
   const colors = {
     low: 'success',
-    medium: 'warning', 
+    medium: 'warning',
     high: 'error'
   }
   return colors[priority] || 'grey'
 }
 
-function formatDate(dateString) {
+// Function to get translated priority text
+function getPriorityText(priority) {
+  const translations = {
+    low: $t('tasks.low'),
+    medium: $t('tasks.medium'),
+    high: $t('tasks.high')
+  }
+  return translations[priority] || priority
+}
+
+// Function to get translated status text
+function getStatusText(status) {
+  const translations = {
+    pending: $t('tasks.pending'),
+    completed: $t('tasks.completed'),
+    expired: $t('tasks.expired') || 'Expired'
+  }
+  return translations[status] || status
+}
+
+// Helper function to check if task is expired
+function isTaskExpired(task) {
+  return task.status === 'pending' && getDueDateUrgency(task.dueDate) === 'overdue'
+}
+
+// Function to automatically update expired tasks
+async function updateExpiredTasks() {
+  const expiredTasks = tasks.value.filter(task => isTaskExpired(task))
+
+  for (const task of expiredTasks) {
+    try {
+      await api.put(`/api/tasks/${task._id}`, {
+        ...task,
+        status: 'expired'
+      })
+      task.status = 'expired'
+    } catch (error) {
+      console.error('Error updating expired task:', error)
+    }
+  }
+
+  if (expiredTasks.length > 0) {
+    await fetchStats()
+  }
+}
+
+// Enhanced date formatting with relative dates and urgency indicators
+function formatDate(dateString, options = {}) {
   if (!dateString) return ''
+
   const date = new Date(dateString)
-  return date.toLocaleDateString()
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+
+  // Reset time for accurate comparison
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate())
+
+  const diffTime = dateOnly - todayOnly
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  // Return relative dates for better UX
+  if (diffDays === 0) {
+    return $t('dates.today')
+  } else if (diffDays === 1) {
+    return $t('dates.tomorrow')
+  } else if (diffDays === -1) {
+    return $t('dates.yesterday')
+  } else if (diffDays > 1 && diffDays <= 7) {
+    return $t('dates.inDays', { days: diffDays })
+  } else if (diffDays < -1 && diffDays >= -7) {
+    return $t('dates.daysAgo', { days: Math.abs(diffDays) })
+  } else {
+    // Use localized date format for dates further away
+    return date.toLocaleDateString($t('dates.locale'), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+}
+
+// Get due date urgency level for styling
+function getDueDateUrgency(dateString) {
+  if (!dateString) return 'none'
+
+  const date = new Date(dateString)
+  const today = new Date()
+  const diffTime = date - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'overdue'
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'tomorrow'
+  if (diffDays <= 3) return 'soon'
+  if (diffDays <= 7) return 'upcoming'
+  return 'future'
+}
+
+// Get urgency color for chips
+function getUrgencyColor(dateString) {
+  const urgency = getDueDateUrgency(dateString)
+  const colors = {
+    overdue: 'error',
+    today: 'warning',
+    tomorrow: 'orange',
+    soon: 'amber',
+    upcoming: 'info',
+    future: 'info',
+    none: 'grey'
+  }
+  return colors[urgency] || 'info'
 }
 
 
 async function fetchTasks() {
   try {
+    isLoadingTasks.value = true
     const { data } = await api.get('/api/tasks')
     tasks.value = data.data.tasks
+
+    // Check and update expired tasks
+    await updateExpiredTasks()
+
     await fetchStats()
   } catch (e) {
     console.error('Fetch tasks error:', e)
@@ -329,6 +524,8 @@ async function fetchTasks() {
       localStorage.removeItem('token')
       router.push('/login')
     }
+  } finally {
+    isLoadingTasks.value = false
   }
 }
 
@@ -370,14 +567,25 @@ async function createTask(values, { resetForm }) {
   }
 }
 
+// Handle checkbox toggle
+function handleTaskToggle(task, newValue) {
+  // Only toggle if the status is actually changing
+  if ((task.status === 'completed') !== newValue) {
+    toggle(task)
+  }
+}
+
 async function toggle(t) {
   try {
     const { data } = await api.patch(`/api/tasks/${t._id}/toggle`)
     const idx = tasks.value.findIndex(x => x._id === t._id)
-    if (idx !== -1) tasks.value[idx] = data.data.task
+    if (idx !== -1) {
+      tasks.value[idx] = data.data.task
+    }
     await fetchStats()
   } catch (error) {
     console.error('Toggle task error:', error)
+    console.error('Error details:', error.response?.data)
   }
 }
 
@@ -399,21 +607,169 @@ onMounted(() => {
 
 <style scoped>
 .tasks-page {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-  padding: 16px !important;
+  background: var(--app-background);
+  min-height: calc(100vh - var(--header-height));
+  margin: calc(-1 * var(--container-padding-md));
+  padding: var(--container-padding-md);
+  transition: background-color 0.3s ease;
 }
 
-.task-form-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 12px !important;
-}
-
+.task-form-card,
 .tasks-list-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  background: var(--app-surface) !important;
   border-radius: 12px !important;
+  box-shadow: 0 4px 12px var(--app-shadow);
+  border: 1px solid var(--app-border-color);
+}
+
+.task-list-overlay {
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-list-overlay .v-overlay__content {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  border-radius: 24px;
+  padding: 48px 40px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  min-width: 320px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dark theme overlay */
+.dark-theme .task-list-overlay .v-overlay__content {
+  background: rgba(30, 30, 30, 0.98);
+  color: #ffffff;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.loading-spinner-container {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.loading-spinner {
+  animation: float 3s ease-in-out infinite;
+}
+
+.loading-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--the7-accent-color, #1ebbf0);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+
+.loading-dots .dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.loading-dots .dot:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.loading-dots .dot:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+/* Background decoration */
+.task-list-overlay .v-overlay__content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg,
+    transparent,
+    rgba(30, 187, 240, 0.05),
+    transparent,
+    rgba(57, 223, 170, 0.05),
+    transparent);
+  animation: shimmer 4s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(-4px);
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.3;
+  }
 }
 
 .task-item {
@@ -422,7 +778,7 @@ onMounted(() => {
 }
 
 .task-item:hover {
-  background-color: rgba(30, 187, 240, 0.05);
+  background-color: var(--app-border-color);
 }
 
 .task-completed {
@@ -443,10 +799,312 @@ onMounted(() => {
   flex-direction: column;
 }
 
+/* Enhanced RTL Support for Tasks Page */
+.rtl .task-form-card,
+.rtl .tasks-list-card,
+.v-application--is-rtl .task-form-card,
+.v-application--is-rtl .tasks-list-card {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  direction: rtl !important;
+}
+
+.rtl .task-item,
+.v-application--is-rtl .task-item {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.rtl .task-title,
+.v-application--is-rtl .task-title {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  text-align: right !important;
+}
+
+.rtl .task-description,
+.v-application--is-rtl .task-description {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  text-align: right !important;
+}
+
+.rtl .task-actions,
+.v-application--is-rtl .task-actions {
+  flex-direction: row-reverse !important;
+}
+
+/* Force RTL for task layout components */
+.rtl .v-row,
+.rtl .v-col,
+.v-application--is-rtl .v-row,
+.v-application--is-rtl .v-col {
+  direction: rtl !important;
+}
+
+.rtl .v-card-title {
+  font-family: 'Tajawal', 'Cairo', 'IBM Plex Sans Arabic', sans-serif;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.rtl .v-text-field,
+.rtl .v-textarea,
+.rtl .v-select {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+}
+
+.rtl .v-btn {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Improved Arabic number formatting */
+.rtl .task-stats {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+}
+
+/* Enhanced Arabic form styling */
+.rtl .task-form .v-field__input {
+  text-align: right;
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  line-height: 1.75;
+}
+
+.rtl .task-form .v-label {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  font-weight: 500;
+}
+
+/* Better spacing for Arabic text */
+.rtl .v-list-item-title {
+  word-spacing: 0.1em;
+  letter-spacing: 0.02em;
+}
+
+/* Chip styling and alignment */
+.task-chip {
+  height: 24px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+}
+
+.task-chip .v-chip__content {
+  padding: 0 8px !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.chip-icon {
+  margin-right: 4px !important;
+  margin-left: 0 !important;
+}
+
+.header-chip {
+  height: 28px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.header-chip .v-chip__content {
+  padding: 0 12px !important;
+  line-height: 1.2 !important;
+}
+
+.dialog-chip {
+  height: 26px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.dialog-chip .v-chip__content {
+  padding: 0 10px !important;
+  line-height: 1.1 !important;
+}
+
+/* RTL chip alignment */
+.rtl .task-chip,
+.v-application--is-rtl .task-chip {
+  direction: rtl !important;
+}
+
+.rtl .chip-icon,
+.v-application--is-rtl .chip-icon {
+  margin-right: 0 !important;
+  margin-left: 4px !important;
+}
+
+/* Task checkbox styling */
+.task-checkbox {
+  flex-shrink: 0 !important;
+  margin-right: 12px !important;
+  margin-left: 0 !important;
+}
+
+.task-checkbox .v-selection-control {
+  min-height: auto !important;
+}
+
+.task-checkbox .v-selection-control__wrapper {
+  height: 24px !important;
+  width: 24px !important;
+}
+
+.task-checkbox .v-checkbox .v-selection-control__input {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* RTL checkbox alignment */
+.rtl .task-checkbox,
+.v-application--is-rtl .task-checkbox {
+  margin-right: 0 !important;
+  margin-left: 12px !important;
+}
+
+/* Theme-aware checkbox styling */
+.task-checkbox .v-selection-control__input:before {
+  border-color: var(--app-border-color) !important;
+}
+
+.task-checkbox .v-selection-control__input:hover:before {
+  border-color: var(--the7-accent-color) !important;
+}
+
+/* Completed task styling enhancement */
+.task-completed .task-checkbox {
+  opacity: 0.8;
+}
+
+.task-completed .task-title,
+.task-completed .task-description {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+/* Due date urgency styling */
+.due-date-chip {
+  font-weight: 600 !important;
+  transition: all 0.3s ease;
+}
+
+.urgency-overdue {
+  animation: pulse-red 2s infinite;
+  font-weight: 700 !important;
+}
+
+.urgency-today {
+  font-weight: 700 !important;
+  background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.urgency-tomorrow {
+  font-weight: 600 !important;
+  background: rgba(255, 152, 0, 0.1) !important;
+}
+
+.urgency-soon {
+  background: rgba(255, 183, 77, 0.1) !important;
+}
+
+@keyframes pulse-red {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Enhanced task item styling based on urgency */
+.task-item.has-overdue-task {
+  border-left: 4px solid #f44336;
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.task-item.has-due-today {
+  border-left: 4px solid #ff9800;
+  background: rgba(255, 152, 0, 0.05);
+}
+
 /* Custom responsive behavior */
 @media (max-width: 960px) {
-  .tasks-page {
-    padding: 8px !important;
+  /* Responsive adjustments handled by CSS variables */
+
+  .rtl .task-title {
+    font-size: 1.1rem;
+    line-height: 1.7;
   }
+
+  .task-chip {
+    height: 22px !important;
+    font-size: 10px !important;
+  }
+
+  .task-chip .v-chip__content {
+    padding: 0 6px !important;
+  }
+
+  .header-chip {
+    height: 26px !important;
+    font-size: 11px !important;
+  }
+
+  .task-checkbox {
+    margin-right: 8px !important;
+  }
+
+  .task-checkbox .v-selection-control__wrapper {
+    height: 20px !important;
+    width: 20px !important;
+  }
+
+  .rtl .task-checkbox,
+  .v-application--is-rtl .task-checkbox {
+    margin-left: 8px !important;
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Responsive adjustments handled by CSS variables */
+}
+
+/* Expired task styling */
+.task-expired {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+.task-expired .v-selection-control__input {
+  background-color: #f5f5f5 !important;
+  border-color: #e0e0e0 !important;
+}
+
+.dark-theme .task-expired .v-selection-control__input {
+  background-color: #424242 !important;
+  border-color: #616161 !important;
+}
+
+.task-item.task-status-expired {
+  border-left: 4px solid #f44336;
+  background: rgba(244, 67, 54, 0.08);
+  opacity: 0.8;
+}
+
+.task-item.task-status-expired .task-title {
+  color: #9e9e9e !important;
+  text-decoration: line-through;
+}
+
+.task-item.task-status-expired .task-description {
+  color: #bdbdbd !important;
+  opacity: 0.7;
 }
 </style>

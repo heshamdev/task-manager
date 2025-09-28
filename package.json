@@ -36,6 +36,7 @@
     "i18next-fs-backend": "^2.1.5",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
+    "vuetify": "^3.10.3",
     "winston": "^3.10.0"
   },
   "devDependencies": {

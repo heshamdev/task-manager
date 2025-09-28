@@ -1,0 +1,766 @@
+/**
+ * Professional Arabic Typography Configuration
+ * Based on best practices from major Arabic websites like Al Jazeera, BBC Arabic, CNN Arabic
+ * and modern Arabic design standards used by Google, Microsoft, and Apple
+ */
+
+:root {
+  /* Primary Arabic Font Stack - Used by major websites */
+  --arabic-font-primary: 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI Arabic', 'Tahoma', sans-serif;
+
+  /* Secondary Arabic Font Stack - For headers and emphasis */
+  --arabic-font-secondary: 'Tajawal', 'Cairo', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+
+  /* Fallback Arabic Font Stack - System fonts */
+  --arabic-font-fallback: 'Segoe UI Arabic', 'Tahoma', 'Arabic Typesetting', 'Traditional Arabic', sans-serif;
+
+  /* Latin Font Stack - For mixed content */
+  --latin-font-primary: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Arabic-specific spacing and sizing */
+  --arabic-line-height: 1.75;
+  --arabic-letter-spacing: 0.02em;
+  --arabic-word-spacing: 0.1em;
+}
+
+/* Global Arabic Typography */
+.rtl {
+  font-family: var(--arabic-font-primary);
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Arabic Text Elements */
+.rtl h1, .rtl .text-h1 {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.rtl h2, .rtl .text-h2 {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.rtl h3, .rtl .text-h3 {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.rtl h4, .rtl .text-h4 {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.rtl h5, .rtl .text-h5 {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.rtl h6, .rtl .text-h6 {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+/* Body Text */
+.rtl p, .rtl .text-body-1, .rtl .text-body-2 {
+  font-family: var(--arabic-font-primary);
+  line-height: var(--arabic-line-height);
+  letter-spacing: var(--arabic-letter-spacing);
+  word-spacing: var(--arabic-word-spacing);
+}
+
+/* Button Text - Enhanced for readability */
+.rtl .v-btn {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.rtl .v-btn--size-small {
+  font-weight: 500;
+}
+
+.rtl .v-btn--size-large {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Form Elements - Enhanced RTL Support */
+.rtl .v-field__input,
+.rtl .v-text-field input,
+.rtl .v-textarea textarea,
+.rtl .v-select__selection,
+.v-application--is-rtl .v-field__input,
+.v-application--is-rtl .v-text-field input,
+.v-application--is-rtl .v-textarea textarea,
+.v-application--is-rtl .v-select__selection {
+  font-family: var(--arabic-font-primary);
+  font-weight: 400;
+  line-height: var(--arabic-line-height);
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+/* Form Field Containers */
+.rtl .v-field,
+.rtl .v-text-field,
+.rtl .v-textarea,
+.rtl .v-select,
+.v-application--is-rtl .v-field,
+.v-application--is-rtl .v-text-field,
+.v-application--is-rtl .v-textarea,
+.v-application--is-rtl .v-select {
+  direction: rtl !important;
+}
+
+/* Form Labels and Placeholders */
+.rtl .v-field-label,
+.rtl .v-label,
+.v-application--is-rtl .v-field-label,
+.v-application--is-rtl .v-label {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+  text-align: right !important;
+  right: 12px !important;
+  left: auto !important;
+}
+
+/* Input Icons */
+.rtl .v-field__prepend-inner,
+.v-application--is-rtl .v-field__prepend-inner {
+  order: 2;
+}
+
+.rtl .v-field__append-inner,
+.v-application--is-rtl .v-field__append-inner {
+  order: 0;
+}
+
+/* Select Dropdown */
+.rtl .v-select__selection-text,
+.v-application--is-rtl .v-select__selection-text {
+  text-align: right !important;
+}
+
+.rtl .v-field-label,
+.rtl .v-label {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+}
+
+/* Navigation and Menu Items - Enhanced RTL */
+.rtl .v-list-item-title,
+.rtl .v-navigation-drawer,
+.v-application--is-rtl .v-list-item-title,
+.v-application--is-rtl .v-navigation-drawer {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.rtl .v-list-item,
+.v-application--is-rtl .v-list-item {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-list-item__prepend,
+.v-application--is-rtl .v-list-item__prepend {
+  order: 2;
+  margin-inline-start: 16px !important;
+  margin-inline-end: 0 !important;
+}
+
+.rtl .v-list-item__append,
+.v-application--is-rtl .v-list-item__append {
+  order: 0;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 16px !important;
+}
+
+.rtl .v-list-item__content,
+.v-application--is-rtl .v-list-item__content {
+  order: 1;
+  text-align: right !important;
+}
+
+/* Menu Positioning */
+.rtl .v-menu > .v-overlay__content,
+.v-application--is-rtl .v-menu > .v-overlay__content {
+  direction: rtl !important;
+}
+
+/* Data Tables */
+.rtl .v-data-table th,
+.rtl .v-data-table td {
+  font-family: var(--arabic-font-primary);
+}
+
+.rtl .v-data-table th {
+  font-weight: 600;
+}
+
+/* Cards and Panels */
+.rtl .v-card-title {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.rtl .v-card-subtitle {
+  font-family: var(--arabic-font-primary);
+  font-weight: 400;
+  line-height: var(--arabic-line-height);
+}
+
+.rtl .v-card-text {
+  font-family: var(--arabic-font-primary);
+  line-height: var(--arabic-line-height);
+}
+
+/* App Bar */
+.rtl .v-app-bar {
+  font-family: var(--arabic-font-primary);
+}
+
+.rtl .v-app-bar-title {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 600;
+}
+
+/* Chips and Tags */
+.rtl .v-chip {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+}
+
+/* Alerts and Messages */
+.rtl .v-alert {
+  font-family: var(--arabic-font-primary);
+  line-height: var(--arabic-line-height);
+}
+
+.rtl .v-alert__title {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 600;
+}
+
+/* Tooltips */
+.rtl .v-tooltip .v-overlay__content {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+}
+
+/* Snackbars */
+.rtl .v-snackbar {
+  font-family: var(--arabic-font-primary);
+  font-weight: 500;
+}
+
+/* Custom Arabic Text Classes */
+.arabic-text-primary {
+  font-family: var(--arabic-font-primary) !important;
+  line-height: var(--arabic-line-height);
+  letter-spacing: var(--arabic-letter-spacing);
+}
+
+.arabic-text-secondary {
+  font-family: var(--arabic-font-secondary) !important;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.arabic-text-heading {
+  font-family: var(--arabic-font-secondary) !important;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* Enhanced Arabic Number Formatting */
+.rtl .arabic-numbers {
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  .rtl {
+    line-height: 1.8;
+  }
+
+  .rtl .v-card-title {
+    line-height: 1.6;
+  }
+}
+
+/* High DPI Display Optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .rtl {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* Dark Mode Arabic Typography */
+.v-theme--dark.rtl {
+  text-rendering: optimizeLegibility;
+}
+
+.v-theme--dark.rtl .v-card-title,
+.v-theme--dark.rtl .text-h4,
+.v-theme--dark.rtl .text-h5 {
+  font-weight: 500; /* Slightly lighter for dark backgrounds */
+}
+
+/* Print Styles for Arabic */
+@media print {
+  .rtl {
+    font-family: var(--arabic-font-fallback);
+    color: #000 !important;
+  }
+}
+
+/* Animation-friendly font loading */
+.font-loading .rtl {
+  font-family: var(--arabic-font-fallback);
+}
+
+/* Accessibility Enhancements */
+.rtl:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Enhanced readability for long-form content */
+.rtl .long-form-content {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  word-spacing: 0.15em;
+  max-width: 75ch;
+}
+
+/* Special styling for mixed Arabic-Latin content */
+.mixed-content {
+  font-family: var(--arabic-font-primary), var(--latin-font-primary);
+}
+
+/* Logo and brand text with Arabic */
+.rtl .logo-text {
+  font-family: var(--arabic-font-secondary);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Complete RTL Layout Support for All Components */
+
+/* Cards - Force RTL layout with flexbox order control */
+.rtl .v-card,
+.v-application--is-rtl .v-card {
+  direction: rtl !important;
+}
+
+.rtl .v-card-item,
+.v-application--is-rtl .v-card-item {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-card-item__prepend,
+.v-application--is-rtl .v-card-item__prepend {
+  order: 2;
+  margin-inline-start: 16px !important;
+  margin-inline-end: 0 !important;
+}
+
+.rtl .v-card-item__append,
+.v-application--is-rtl .v-card-item__append {
+  order: 0;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 16px !important;
+}
+
+.rtl .v-card-item__content,
+.v-application--is-rtl .v-card-item__content {
+  order: 1;
+  text-align: right !important;
+}
+
+/* Container and Grid System RTL */
+.rtl .v-container,
+.v-application--is-rtl .v-container {
+  direction: rtl !important;
+}
+
+.rtl .v-row,
+.v-application--is-rtl .v-row {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-col,
+.v-application--is-rtl .v-col {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* Button Layout RTL */
+.rtl .v-btn,
+.v-application--is-rtl .v-btn {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-btn__prepend,
+.v-application--is-rtl .v-btn__prepend {
+  order: 2;
+  margin-inline-start: 8px !important;
+  margin-inline-end: 0 !important;
+}
+
+.rtl .v-btn__append,
+.v-application--is-rtl .v-btn__append {
+  order: 0;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 8px !important;
+}
+
+.rtl .v-btn__content,
+.v-application--is-rtl .v-btn__content {
+  order: 1;
+  text-align: center !important;
+}
+
+/* Chip Component RTL */
+.rtl .v-chip,
+.v-application--is-rtl .v-chip {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-chip__prepend,
+.v-application--is-rtl .v-chip__prepend {
+  order: 2;
+  margin-inline-start: 8px !important;
+  margin-inline-end: 0 !important;
+}
+
+.rtl .v-chip__append,
+.v-application--is-rtl .v-chip__append {
+  order: 0;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 8px !important;
+}
+
+/* Text Field Icon Positioning */
+.rtl .v-input__prepend,
+.v-application--is-rtl .v-input__prepend {
+  order: 2;
+}
+
+.rtl .v-input__append,
+.v-application--is-rtl .v-input__append {
+  order: 0;
+}
+
+.rtl .v-input__control,
+.v-application--is-rtl .v-input__control {
+  order: 1;
+}
+
+/* Navigation Drawer RTL */
+.rtl .v-navigation-drawer,
+.v-application--is-rtl .v-navigation-drawer {
+  direction: rtl !important;
+}
+
+.rtl .v-navigation-drawer--left,
+.v-application--is-rtl .v-navigation-drawer--left {
+  left: auto !important;
+  right: 0 !important;
+}
+
+.rtl .v-navigation-drawer--right,
+.v-application--is-rtl .v-navigation-drawer--right {
+  right: auto !important;
+  left: 0 !important;
+}
+
+/* App Bar Complete RTL Layout */
+.rtl .v-app-bar,
+.v-application--is-rtl .v-app-bar {
+  direction: rtl !important;
+}
+
+.rtl .v-app-bar__nav-icon,
+.v-application--is-rtl .v-app-bar__nav-icon {
+  order: 3;
+}
+
+.rtl .v-app-bar-title,
+.v-application--is-rtl .v-app-bar-title {
+  order: 2;
+  text-align: right !important;
+  margin-inline-start: auto !important;
+  margin-inline-end: 0 !important;
+}
+
+.rtl .v-toolbar__content,
+.v-application--is-rtl .v-toolbar__content {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Spacer Component RTL */
+.rtl .v-spacer,
+.v-application--is-rtl .v-spacer {
+  order: 1;
+}
+
+/* Alert Component RTL */
+.rtl .v-alert,
+.v-application--is-rtl .v-alert {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.rtl .v-alert__prepend,
+.v-application--is-rtl .v-alert__prepend {
+  order: 2;
+  margin-inline-start: 16px !important;
+  margin-inline-end: 0 !important;
+}
+
+.rtl .v-alert__append,
+.v-application--is-rtl .v-alert__append {
+  order: 0;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 16px !important;
+}
+
+.rtl .v-alert__content,
+.v-application--is-rtl .v-alert__content {
+  order: 1;
+  text-align: right !important;
+}
+
+/* Tab Component RTL */
+.rtl .v-tabs,
+.v-application--is-rtl .v-tabs {
+  direction: rtl !important;
+}
+
+.rtl .v-tab,
+.v-application--is-rtl .v-tab {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Progress Component RTL */
+.rtl .v-progress-linear,
+.v-application--is-rtl .v-progress-linear {
+  direction: rtl !important;
+}
+
+.rtl .v-progress-circular,
+.v-application--is-rtl .v-progress-circular {
+  direction: rtl !important;
+}
+
+/* Breadcrumb RTL */
+.rtl .v-breadcrumbs,
+.v-application--is-rtl .v-breadcrumbs {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-breadcrumbs-item,
+.v-application--is-rtl .v-breadcrumbs-item {
+  direction: rtl !important;
+}
+
+/* Stepper RTL */
+.rtl .v-stepper,
+.v-application--is-rtl .v-stepper {
+  direction: rtl !important;
+}
+
+.rtl .v-stepper-header,
+.v-application--is-rtl .v-stepper-header {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Expansion Panel RTL */
+.rtl .v-expansion-panels,
+.v-application--is-rtl .v-expansion-panels {
+  direction: rtl !important;
+}
+
+.rtl .v-expansion-panel-title,
+.v-application--is-rtl .v-expansion-panel-title {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* Slider RTL */
+.rtl .v-slider,
+.v-application--is-rtl .v-slider {
+  direction: rtl !important;
+}
+
+.rtl .v-range-slider,
+.v-application--is-rtl .v-range-slider {
+  direction: rtl !important;
+}
+
+/* Switch and Checkbox RTL */
+.rtl .v-switch,
+.rtl .v-checkbox,
+.rtl .v-radio,
+.v-application--is-rtl .v-switch,
+.v-application--is-rtl .v-checkbox,
+.v-application--is-rtl .v-radio {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+.rtl .v-switch__track,
+.v-application--is-rtl .v-switch__track {
+  margin-inline-start: 16px !important;
+  margin-inline-end: 0 !important;
+}
+
+/* Avatar and Badge RTL */
+.rtl .v-avatar,
+.v-application--is-rtl .v-avatar {
+  direction: rtl !important;
+}
+
+.rtl .v-badge,
+.v-application--is-rtl .v-badge {
+  direction: rtl !important;
+}
+
+.rtl .v-badge__badge,
+.v-application--is-rtl .v-badge__badge {
+  left: auto !important;
+  right: -6px !important;
+}
+
+/* Rating RTL */
+.rtl .v-rating,
+.v-application--is-rtl .v-rating {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Timeline RTL */
+.rtl .v-timeline,
+.v-application--is-rtl .v-timeline {
+  direction: rtl !important;
+}
+
+.rtl .v-timeline-item,
+.v-application--is-rtl .v-timeline-item {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Bottom Navigation RTL */
+.rtl .v-bottom-navigation,
+.v-application--is-rtl .v-bottom-navigation {
+  direction: rtl !important;
+}
+
+.rtl .v-btn-toggle,
+.v-application--is-rtl .v-btn-toggle {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* File Input RTL */
+.rtl .v-file-input,
+.v-application--is-rtl .v-file-input {
+  direction: rtl !important;
+}
+
+/* OTP Input RTL */
+.rtl .v-otp-input,
+.v-application--is-rtl .v-otp-input {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Pagination RTL */
+.rtl .v-pagination,
+.v-application--is-rtl .v-pagination {
+  direction: rtl !important;
+  flex-direction: row-reverse !important;
+}
+
+/* Speed Dial RTL */
+.rtl .v-speed-dial,
+.v-application--is-rtl .v-speed-dial {
+  direction: rtl !important;
+}
+
+/* System Bar RTL */
+.rtl .v-system-bar,
+.v-application--is-rtl .v-system-bar {
+  direction: rtl !important;
+}
+
+/* Virtual Scroll RTL */
+.rtl .v-virtual-scroll,
+.v-application--is-rtl .v-virtual-scroll {
+  direction: rtl !important;
+}
+
+/* Window RTL */
+.rtl .v-window,
+.v-application--is-rtl .v-window {
+  direction: rtl !important;
+}
+
+.rtl .v-window-item,
+.v-application--is-rtl .v-window-item {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* Force RTL for all custom components */
+.rtl *,
+.v-application--is-rtl * {
+  direction: inherit !important;
+}
+
+/* Ensure text alignment for all text elements */
+.rtl p,
+.rtl span,
+.rtl div,
+.rtl h1, .rtl h2, .rtl h3, .rtl h4, .rtl h5, .rtl h6,
+.v-application--is-rtl p,
+.v-application--is-rtl span,
+.v-application--is-rtl div,
+.v-application--is-rtl h1,
+.v-application--is-rtl h2,
+.v-application--is-rtl h3,
+.v-application--is-rtl h4,
+.v-application--is-rtl h5,
+.v-application--is-rtl h6 {
+  text-align: right !important;
+  direction: rtl !important;
+}

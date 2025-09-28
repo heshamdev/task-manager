@@ -158,9 +158,9 @@ const optionalAuth = async (req, res, next) => {
  * @param {string} expiresIn - Token expiration time (default from env)
  * @returns {string} Signed JWT token
  */
-const generateToken = (userId, expiresIn = process.env.JWT_EXPIRES_IN || '7d') => {
+const generateToken = (userId, isAdmin = false, expiresIn = process.env.JWT_EXPIRES_IN || '7d') => {
     return jwt.sign(
-        { userId },
+        { userId, isAdmin },
         process.env.JWT_SECRET,
         { expiresIn }
     );

@@ -1,18 +1,13 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// Simple vite config with Vue plugin
+// Vite config with Vue plugin - configured for local development
 export default defineConfig({
   plugins: [vue()],
   server: {
-    port: 3002,
+    port: 8080,
     host: true,
-    proxy: {
-      '/api': {
-        target: 'https://task-manager-q8bv.onrender.com/',
-        changeOrigin: true,
-        secure: false
-      }
-    }
+    strictPort: true  // Exit if port 8080 is unavailable instead of trying other ports
+    // No proxy - using local backend at localhost:3000
   }
 })

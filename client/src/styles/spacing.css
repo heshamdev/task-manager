@@ -1,0 +1,118 @@
+/**
+ * Global Spacing System
+ * Provides consistent padding and margin values across the entire application
+ * Based on 8px grid system for better design consistency
+ */
+
+:root {
+  /* Base spacing unit (8px) */
+  --spacing-unit: 8px;
+
+  /* Spacing scale */
+  --spacing-xs: calc(var(--spacing-unit) * 0.5);    /* 4px */
+  --spacing-sm: var(--spacing-unit);                /* 8px */
+  --spacing-md: calc(var(--spacing-unit) * 1.5);    /* 12px */
+  --spacing-lg: calc(var(--spacing-unit) * 2);      /* 16px */
+  --spacing-xl: calc(var(--spacing-unit) * 3);      /* 24px */
+  --spacing-2xl: calc(var(--spacing-unit) * 4);     /* 32px */
+  --spacing-3xl: calc(var(--spacing-unit) * 5);     /* 40px */
+  --spacing-4xl: calc(var(--spacing-unit) * 6);     /* 48px */
+  --spacing-5xl: calc(var(--spacing-unit) * 8);     /* 64px */
+
+  /* Container paddings */
+  --container-padding-sm: var(--spacing-lg);        /* 16px for mobile */
+  --container-padding-md: var(--spacing-xl);        /* 24px for tablet */
+  --container-padding-lg: var(--spacing-2xl);       /* 32px for desktop */
+
+  /* Card paddings */
+  --card-padding-sm: var(--spacing-lg);             /* 16px */
+  --card-padding-md: var(--spacing-xl);             /* 24px */
+  --card-padding-lg: var(--spacing-2xl);            /* 32px */
+
+  /* Button paddings */
+  --button-padding-sm: var(--spacing-xs) var(--spacing-md);   /* 4px 12px */
+  --button-padding-md: var(--spacing-sm) var(--spacing-lg);   /* 8px 16px */
+  --button-padding-lg: var(--spacing-md) var(--spacing-xl);   /* 12px 24px */
+
+  /* Form field paddings */
+  --field-padding-sm: var(--spacing-sm) var(--spacing-md);    /* 8px 12px */
+  --field-padding-md: var(--spacing-md) var(--spacing-lg);    /* 12px 16px */
+  --field-padding-lg: var(--spacing-lg) var(--spacing-xl);    /* 16px 24px */
+
+  /* Section spacings */
+  --section-spacing-sm: var(--spacing-xl);          /* 24px */
+  --section-spacing-md: var(--spacing-2xl);         /* 32px */
+  --section-spacing-lg: var(--spacing-4xl);         /* 48px */
+
+  /* Header/Footer heights and paddings */
+  --header-height: 64px;
+  --header-padding: 0 var(--spacing-xl);            /* 0 24px */
+
+  /* Content margins */
+  --content-margin-top: var(--spacing-xl);          /* 24px */
+  --content-margin-bottom: var(--spacing-xl);       /* 24px */
+}
+
+/* Responsive spacing adjustments */
+@media (max-width: 768px) {
+  :root {
+    --container-padding-md: var(--spacing-lg);      /* 16px for mobile */
+    --header-padding: 0 var(--spacing-lg);          /* 0 16px */
+    --card-padding-md: var(--spacing-lg);           /* 16px */
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --container-padding-md: var(--spacing-md);      /* 12px for small mobile */
+    --header-padding: 0 var(--spacing-md);          /* 0 12px */
+    --card-padding-md: var(--spacing-md);           /* 12px */
+    --button-padding-md: var(--spacing-xs) var(--spacing-md); /* 4px 12px */
+  }
+}
+
+/* Utility classes for consistent spacing */
+.p-xs { padding: var(--spacing-xs) !important; }
+.p-sm { padding: var(--spacing-sm) !important; }
+.p-md { padding: var(--spacing-md) !important; }
+.p-lg { padding: var(--spacing-lg) !important; }
+.p-xl { padding: var(--spacing-xl) !important; }
+.p-2xl { padding: var(--spacing-2xl) !important; }
+.p-3xl { padding: var(--spacing-3xl) !important; }
+
+.px-xs { padding-left: var(--spacing-xs) !important; padding-right: var(--spacing-xs) !important; }
+.px-sm { padding-left: var(--spacing-sm) !important; padding-right: var(--spacing-sm) !important; }
+.px-md { padding-left: var(--spacing-md) !important; padding-right: var(--spacing-md) !important; }
+.px-lg { padding-left: var(--spacing-lg) !important; padding-right: var(--spacing-lg) !important; }
+.px-xl { padding-left: var(--spacing-xl) !important; padding-right: var(--spacing-xl) !important; }
+
+.py-xs { padding-top: var(--spacing-xs) !important; padding-bottom: var(--spacing-xs) !important; }
+.py-sm { padding-top: var(--spacing-sm) !important; padding-bottom: var(--spacing-sm) !important; }
+.py-md { padding-top: var(--spacing-md) !important; padding-bottom: var(--spacing-md) !important; }
+.py-lg { padding-top: var(--spacing-lg) !important; padding-bottom: var(--spacing-lg) !important; }
+.py-xl { padding-top: var(--spacing-xl) !important; padding-bottom: var(--spacing-xl) !important; }
+
+.m-xs { margin: var(--spacing-xs) !important; }
+.m-sm { margin: var(--spacing-sm) !important; }
+.m-md { margin: var(--spacing-md) !important; }
+.m-lg { margin: var(--spacing-lg) !important; }
+.m-xl { margin: var(--spacing-xl) !important; }
+
+.mx-xs { margin-left: var(--spacing-xs) !important; margin-right: var(--spacing-xs) !important; }
+.mx-sm { margin-left: var(--spacing-sm) !important; margin-right: var(--spacing-sm) !important; }
+.mx-md { margin-left: var(--spacing-md) !important; margin-right: var(--spacing-md) !important; }
+.mx-lg { margin-left: var(--spacing-lg) !important; margin-right: var(--spacing-lg) !important; }
+.mx-xl { margin-left: var(--spacing-xl) !important; margin-right: var(--spacing-xl) !important; }
+
+.my-xs { margin-top: var(--spacing-xs) !important; margin-bottom: var(--spacing-xs) !important; }
+.my-sm { margin-top: var(--spacing-sm) !important; margin-bottom: var(--spacing-sm) !important; }
+.my-md { margin-top: var(--spacing-md) !important; margin-bottom: var(--spacing-md) !important; }
+.my-lg { margin-top: var(--spacing-lg) !important; margin-bottom: var(--spacing-lg) !important; }
+.my-xl { margin-top: var(--spacing-xl) !important; margin-bottom: var(--spacing-xl) !important; }
+
+/* Gap utilities for flex/grid */
+.gap-xs { gap: var(--spacing-xs) !important; }
+.gap-sm { gap: var(--spacing-sm) !important; }
+.gap-md { gap: var(--spacing-md) !important; }
+.gap-lg { gap: var(--spacing-lg) !important; }
+.gap-xl { gap: var(--spacing-xl) !important; }

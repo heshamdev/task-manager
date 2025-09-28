@@ -46,7 +46,7 @@ router.post('/register', validateRegistration, async (req, res) => {
         await user.save();
 
         // Generate JWT token
-        const token = generateToken(user._id);
+        const token = generateToken(user._id, user.isAdmin);
 
         // Log user registration
         logger.logUserAction(
@@ -123,7 +123,7 @@ router.post('/login', validateLogin, async (req, res) => {
         await user.updateLastLogin();
 
         // Generate JWT token
-        const token = generateToken(user._id);
+        const token = generateToken(user._id, user.isAdmin);
 
         // Log user login
         logger.logUserAction(
