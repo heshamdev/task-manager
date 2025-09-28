@@ -23,64 +23,49 @@ const logger = require('../utils/logger');
  * @returns {void} Calls next() on success, sends error response on failure
  */
 const authenticateToken = async (req, res, next) => {
-    try {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: req.t('auth.tokenRequired') || 'Access token is required'
-            });
-        }
-
-        // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Find user by ID from token
-        const user = await User.findById(decoded.userId).select('-password');
-        
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: req.t('auth.userNotFound') || 'User not found'
-            });
-        }
-
-        if (!user.isActive) {
-            return res.status(401).json({
-                success: false,
-                message: req.t('auth.accountDeactivated') || 'Account has been deactivated'
-            });
-        }
-
-        // Add user to request object
-        req.user = user;
-        req.userId = user._id.toString();
-        
-        next();
-    } catch (error) {
-        logger.error('Authentication error:', error);
-        
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({
-                success: false,
-                message: req.t('auth.invalidToken') || 'Invalid token'
-            });
-        }
-        
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                message: req.t('auth.tokenExpired') || 'Token has expired'
-            });
-        }
-        
-        return res.status(500).json({
-            success: false,
-            message: req.t('errors.serverError') || 'Internal server error'
-        });
+  try {
+    // ✅ let preflight requests through
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
     }
+
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: req.t('auth.tokenRequired') || 'Access token is required'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: req.t('auth.userNotFound') || 'User not found'
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: req.t('auth.accountDeactivated') || 'Account has been deactivated'
+      });
+    }
+
+    req.user = user;
+    req.userId = user._id.toString();
+    next();
+  } catch (error) {
+    logger.error('Authentication error:', error);
+    return res.status(401).json({
+      success: false,
+      message: req.t('auth.invalidToken') || 'Invalid or expired token'
+    });
+  }
 };
 
 /**
