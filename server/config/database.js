@@ -22,7 +22,7 @@ const connectDB = async () => {
         const mongoURI = process.env.MONGODB_URI;
         
         if (!mongoURI) {
-            console.log('No MongoDB URI provided, skipping database connection');
+            // No MongoDB URI provided, skipping database connection
             return;
         }
 
@@ -33,10 +33,10 @@ const connectDB = async () => {
             socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
         };
 
-        console.log('Connecting to MongoDB:', mongoURI);
+        // Connecting to MongoDB
         const conn = await mongoose.connect(mongoURI, options);
-        
-        console.log(`MongoDB Connected: ${conn.connection.host}`);
+
+        // MongoDB Connected successfully
         
         // Handle connection events
         mongoose.connection.on('error', (err) => {
@@ -48,13 +48,13 @@ const connectDB = async () => {
         });
 
         mongoose.connection.on('reconnected', () => {
-            console.log('MongoDB reconnected');
+            // MongoDB reconnected
         });
 
         // Graceful shutdown
         process.on('SIGINT', async () => {
             await mongoose.connection.close();
-            console.log('MongoDB connection closed through app termination');
+            // MongoDB connection closed through app termination
             process.exit(0);
         });
 

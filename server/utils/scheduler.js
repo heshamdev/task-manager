@@ -9,56 +9,56 @@ const Task = require('../models/Task');
 const logger = require('./logger');
 
 /**
- * Update all expired tasks across all users
- * This function runs periodically to mark overdue tasks as expired
+ * Update all overdue tasks across all users
+ * This function runs periodically to mark overdue tasks as overdue
  *
  * @returns {Promise<Object>} Result of the update operation
  */
-async function updateAllExpiredTasks() {
+async function updateAllOverdueTasks() {
     try {
-        const result = await Task.updateExpiredTasks();
+        const result = await Task.updateOverdueTasks();
 
         if (result.modifiedCount > 0) {
-            logger.info(`Updated ${result.modifiedCount} expired tasks`, {
+            logger.info(`Updated ${result.modifiedCount} overdue tasks`, {
                 modifiedCount: result.modifiedCount,
-                expiredTaskIds: result.expiredTaskIds
+                overdueTaskIds: result.overdueTaskIds
             });
         }
 
         return result;
     } catch (error) {
-        logger.error('Error updating expired tasks:', error);
+        logger.error('Error updating overdue tasks:', error);
         throw error;
     }
 }
 
 /**
  * Start the scheduler with configurable intervals
- * Sets up periodic execution of expired task updates
+ * Sets up periodic execution of overdue task updates
  *
  * @param {number} intervalMinutes - Interval in minutes between updates (default: 60)
  */
 function startScheduler(intervalMinutes = 60) {
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    logger.info(`Starting expired task scheduler with ${intervalMinutes} minute intervals`);
+    logger.info(`Starting overdue task scheduler with ${intervalMinutes} minute intervals`);
 
     // Run immediately on startup
-    updateAllExpiredTasks().catch(error => {
-        logger.error('Initial expired task update failed:', error);
+    updateAllOverdueTasks().catch(error => {
+        logger.error('Initial overdue task update failed:', error);
     });
 
     // Schedule periodic updates
     const intervalId = setInterval(() => {
-        updateAllExpiredTasks().catch(error => {
-            logger.error('Scheduled expired task update failed:', error);
+        updateAllOverdueTasks().catch(error => {
+            logger.error('Scheduled overdue task update failed:', error);
         });
     }, intervalMs);
 
     // Return cleanup function
     return () => {
         clearInterval(intervalId);
-        logger.info('Expired task scheduler stopped');
+        logger.info('Overdue task scheduler stopped');
     };
 }
 
@@ -72,7 +72,7 @@ function stopScheduler() {
 }
 
 module.exports = {
-    updateAllExpiredTasks,
+    updateAllOverdueTasks,
     startScheduler,
     stopScheduler
 };

@@ -7,7 +7,16 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // Basic validation to check if token looks like a valid JWT
+    const tokenParts = token.split('.');
+    if (tokenParts.length === 3) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // Clear malformed token
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      console.warn("Malformed JWT token detected and cleared");
+    }
   }
 
   // Add current view context for better logging
@@ -23,5 +32,23 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+// Response interceptor to handle authentication errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear invalid tokens and redirect to login
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Only redirect if not already on login/register page
+      if (!window.location.pathname.includes('/auth')) {
+        window.location.href = '/auth/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

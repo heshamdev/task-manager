@@ -45,10 +45,10 @@ function createApp() {
     // Security middleware
     app.use(helmet());
     
-    // Rate limiting
+    // Rate limiting - more generous for development
     const limiter = rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100, // limit each IP to 100 requests per windowMs
+        max: process.env.NODE_ENV === 'development' ? 500 : 100, // Higher limit for development
         message: 'Too many requests from this IP, please try again later.'
     });
     app.use(limiter);
@@ -73,7 +73,7 @@ function createApp() {
 
     // Logging middleware
     app.use((req, res, next) => {
-        console.log(`${req.method} ${req.path} - ${req.ip}`);
+        // Request logging handled by logging middleware
         next();
     });
 
@@ -136,7 +136,7 @@ async function startServer(port = process.env.PORT || 3000) {
         const app = createApp();
         
         const server = app.listen(port, () => {
-            console.log(`Server running on port ${port} in ${process.env.NODE_ENV} mode`);
+            // Server started successfully
         });
 
         server.on('error', (err) => {
@@ -151,17 +151,17 @@ async function startServer(port = process.env.PORT || 3000) {
 
         // Graceful shutdown
         process.on('SIGTERM', () => {
-            console.log('SIGTERM received, shutting down gracefully');
+            // SIGTERM received, shutting down gracefully
             server.close(() => {
-                console.log('Process terminated');
+                // Process terminated
                 process.exit(0);
             });
         });
 
         process.on('SIGINT', () => {
-            console.log('SIGINT received, shutting down gracefully');
+            // SIGINT received, shutting down gracefully
             server.close(() => {
-                console.log('Process terminated');
+                // Process terminated
                 process.exit(0);
             });
         });

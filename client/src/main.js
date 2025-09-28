@@ -99,23 +99,16 @@ defineRule('futureDate', (value) => {
   const selectedDate = new Date(value)
   const today = new Date()
   today.setHours(0, 0, 0, 0) // Reset time to start of day
+  selectedDate.setHours(0, 0, 0, 0) // Reset time to start of selected day
 
   // Check if date is valid
   if (isNaN(selectedDate.getTime())) {
     return i18n.global.t('validation.invalidDate')
   }
 
-  // Check if date is not too far in the past
-  const minDate = new Date(today)
-  minDate.setDate(today.getDate() - 1) // Allow yesterday
-
-  if (selectedDate < minDate) {
-    const diffDays = Math.ceil((minDate - selectedDate) / (1000 * 60 * 60 * 24))
-    if (diffDays === 1) {
-      return i18n.global.t('validation.pastDate')
-    } else {
-      return i18n.global.t('validation.pastDateWithDays', { days: diffDays })
-    }
+  // Check if date is not in the past (allow today and future dates)
+  if (selectedDate < today) {
+    return i18n.global.t('validation.pastDate')
   }
 
   // Check if date is not too far in the future (optional - prevent unrealistic dates)
@@ -216,4 +209,17 @@ router.afterEach((to) => {
 })
 
 app.mount('#app')
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        // Service worker registered successfully
+      })
+      .catch((registrationError) => {
+        // Service worker registration failed
+      })
+  })
+}
 

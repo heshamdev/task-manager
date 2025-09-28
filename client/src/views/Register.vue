@@ -206,13 +206,23 @@ async function onSubmit(values, { setErrors }) {
     console.error('Error status:', e?.response?.status)
     
     // Check if it's a validation error (field-specific errors)
-    if (e?.response?.status === 400 && e?.response?.data?.errors) {
-      // Validation errors - set field-specific errors
+    if (e?.response?.status === 400 && e?.response?.data?.validationFailed && e?.response?.data?.errors) {
+      // Handle new validation error format
       const fieldErrors = {}
       e.response.data.errors.forEach(err => {
-        fieldErrors[err.path || err.param || err.field] = err.msg || err.message
+        const fieldName = err.field || err.path || err.param
+        if (fieldName) {
+          fieldErrors[fieldName] = err.message || err.msg
+        }
       })
-      setErrors(fieldErrors)
+
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors(fieldErrors)
+        // Show the main validation message
+        error.value = e.response?.data?.message || $t('validation.validationFailed')
+      } else {
+        error.value = e.response?.data?.message || $t('validation.validationFailed')
+      }
     } else {
       // Registration or server errors - show general error message
       const statusCode = e?.response?.status

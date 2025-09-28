@@ -30,12 +30,12 @@ router.use(authenticateToken);
  */
 router.get('/', async (req, res) => {
     try {
-        const { status, priority, page = 1, limit = 10 } = req.query;
+        const { status, priority, page = 1, limit = 5 } = req.query;
         const userId = req.userId;
 
         // Build filter object
         const query = { userId };
-        if (status && ['pending', 'completed', 'expired'].includes(status)) {
+        if (status && ['active', 'completed', 'overdue'].includes(status)) {
             query.status = status;
         }
         if (priority && ['low', 'medium', 'high'].includes(priority)) {
@@ -44,12 +44,12 @@ router.get('/', async (req, res) => {
 
         // Calculate pagination
         const pageNum = parseInt(page, 10) || 1;
-        const limitNum = parseInt(limit, 10) || 10;
+        const limitNum = parseInt(limit, 10) || 5;
         const skip = (pageNum - 1) * limitNum;
 
         // Get tasks with filters and pagination
         const tasks = await Task.find(query)
-            .sort({ createdAt: -1 })
+            .sort({ dueDate: 1, createdAt: -1 })
             .skip(skip)
             .limit(limitNum)
             .exec();
@@ -57,6 +57,13 @@ router.get('/', async (req, res) => {
         // Get total count for pagination
         const totalTasks = await Task.countDocuments(query);
         const totalPages = Math.ceil(totalTasks / limitNum);
+
+        // Log view tasks action
+        await logRequestAction(req, 'VIEW_TASKS', {
+            filtersApplied: { status, priority },
+            pagination: { page: pageNum, limit: limitNum },
+            resultsCount: tasks.length
+        }, res);
 
         res.json({
             success: true,
@@ -83,34 +90,194 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * Update expired tasks for authenticated user
- * Finds tasks that are overdue and marks them as expired
+ * Update overdue tasks for authenticated user
+ * Finds tasks that are overdue and marks them as overdue
  *
- * @route POST /api/tasks/update-expired
- * @returns {Object} Result of expired tasks update operation
+ * @route POST /api/tasks/update-overdue
+ * @returns {Object} Result of overdue tasks update operation
  */
-router.post('/update-expired', async (req, res) => {
+router.post('/update-overdue', async (req, res) => {
     try {
         const userId = req.userId;
-        const result = await Task.updateExpiredTasks(userId);
+        const result = await Task.updateOverdueTasks(userId);
 
         // Log the action with enhanced logging
-        await logRequestAction(req, 'UPDATE_EXPIRED_TASKS', {
+        await logRequestAction(req, 'UPDATE_OVERDUE_TASKS', {
             modifiedCount: result.modifiedCount,
-            expiredTaskIds: result.expiredTaskIds
+            overdueTaskIds: result.overdueTaskIds
         });
 
         res.json({
             success: true,
-            message: req.t('tasks.expiredTasksUpdated') || 'Expired tasks updated successfully',
+            message: req.t('tasks.overdueTasksUpdated') || 'Overdue tasks updated successfully',
             data: {
                 modifiedCount: result.modifiedCount,
-                expiredTaskIds: result.expiredTaskIds
+                overdueTaskIds: result.overdueTaskIds
             }
         });
 
     } catch (error) {
-        logger.error('Update expired tasks error:', error);
+        logger.error('Update overdue tasks error:', error);
+        res.status(500).json({
+            success: false,
+            message: (process.env.NODE_ENV === 'development' && error && error.message) ? error.message : (req.t('errors.serverError') || 'Internal server error')
+        });
+    }
+});
+
+/**
+ * Get filtered tasks with advanced filtering options
+ * Professional filtering system with priority, date logic, and multiple criteria
+ *
+ * @route GET /api/tasks/filter
+ * @query {string} status - Filter by status (active, completed, overdue)
+ * @query {string} priority - Filter by priority (low, medium, high)
+ * @query {string} dateFilter - Filter by date (today, tomorrow, thisWeek, overdue, upcoming)
+ * @query {string} search - Search in title and description
+ * @query {string} sortBy - Sort by field (dueDate, priority, createdAt, updatedAt)
+ * @query {string} sortOrder - Sort order (asc, desc)
+ * @returns {Object} Filtered and sorted tasks
+ */
+router.get('/filter', async (req, res) => {
+    try {
+        const {
+            status,
+            priority,
+            dateFilter,
+            search,
+            sortBy = 'dueDate',
+            sortOrder = 'asc',
+            page = 1,
+            limit = 5
+        } = req.query;
+        const userId = req.userId;
+
+        // Build base query
+        const query = { userId };
+
+        // Status filter
+        if (status && ['active', 'completed', 'overdue'].includes(status)) {
+            query.status = status;
+        }
+
+        // Priority filter
+        if (priority && ['low', 'medium', 'high'].includes(priority)) {
+            query.priority = priority;
+        }
+
+        // Date-based filters
+        if (dateFilter) {
+            const now = new Date();
+            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+            const startOfTomorrow = endOfToday;
+            const endOfTomorrow = new Date(startOfTomorrow.getTime() + 24 * 60 * 60 * 1000);
+            const startOfWeek = new Date(startOfToday.getTime() - startOfToday.getDay() * 24 * 60 * 60 * 1000);
+            const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            switch (dateFilter) {
+                case 'today':
+                    query.dueDate = {
+                        $gte: startOfToday,
+                        $lt: endOfToday
+                    };
+                    break;
+                case 'tomorrow':
+                    query.dueDate = {
+                        $gte: startOfTomorrow,
+                        $lt: endOfTomorrow
+                    };
+                    break;
+                case 'thisWeek':
+                    query.dueDate = {
+                        $gte: startOfWeek,
+                        $lt: endOfWeek
+                    };
+                    break;
+                case 'overdue':
+                    query.dueDate = { $lt: now };
+                    query.status = { $ne: 'completed' };
+                    break;
+                case 'upcoming':
+                    query.dueDate = { $gte: now };
+                    break;
+                case 'noDueDate':
+                    query.dueDate = null;
+                    break;
+            }
+        }
+
+        // Search filter
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Build sort object
+        const sortOptions = {};
+        if (sortBy === 'priority') {
+            // Custom priority sorting: high > medium > low
+            sortOptions.priority = sortOrder === 'asc' ? 1 : -1;
+        } else {
+            sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        }
+
+        // Add secondary sort by createdAt for consistent ordering
+        if (sortBy !== 'createdAt') {
+            sortOptions.createdAt = -1;
+        }
+
+        // Calculate pagination
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 5;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Execute query with pagination
+        const tasks = await Task.find(query)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNum)
+            .exec();
+
+        // Get total count for pagination
+        const totalTasks = await Task.countDocuments(query);
+        const totalPages = Math.ceil(totalTasks / limitNum);
+
+        // Log filter tasks action
+        await logRequestAction(req, 'FILTER_TASKS', {
+            filtersApplied: { status, priority, dateFilter, search },
+            sorting: { sortBy, sortOrder },
+            pagination: { page: pageNum, limit: limitNum },
+            resultsCount: tasks.length,
+            totalMatching: totalTasks
+        }, res);
+
+        res.json({
+            success: true,
+            data: {
+                tasks,
+                pagination: {
+                    currentPage: pageNum,
+                    totalPages,
+                    totalTasks,
+                    hasNextPage: pageNum < totalPages,
+                    hasPrevPage: pageNum > 1
+                },
+                filters: {
+                    status,
+                    priority,
+                    dateFilter,
+                    search,
+                    sortBy,
+                    sortOrder
+                }
+            }
+        });
+
+    } catch (error) {
+        logger.error('Get filtered tasks error:', error);
         res.status(500).json({
             success: false,
             message: (process.env.NODE_ENV === 'development' && error && error.message) ? error.message : (req.t('errors.serverError') || 'Internal server error')
@@ -129,6 +296,11 @@ router.get('/stats', async (req, res) => {
     try {
         const userId = req.userId;
         const stats = await Task.getTaskStats(userId);
+
+        // Log view task stats action
+        await logRequestAction(req, 'VIEW_TASK_STATS', {
+            statsReturned: Object.keys(stats)
+        }, res);
 
         res.json({
             success: true,
@@ -165,6 +337,12 @@ router.get('/:id', async (req, res) => {
                 message: req.t('tasks.taskNotFound') || 'Task not found'
             });
         }
+
+        // Log view single task action
+        await logRequestAction(req, 'VIEW_TASK', {
+            taskId: task._id.toString(),
+            title: task.title
+        }, res);
 
         res.json({
             success: true,
@@ -263,6 +441,31 @@ router.put('/:id', validateTaskUpdate, async (req, res) => {
         const userId = req.userId;
         const updateData = req.body;
 
+        // Find the existing task first
+        const existingTask = await Task.findOne({ _id: id, userId });
+
+        if (!existingTask) {
+            return res.status(404).json({
+                success: false,
+                message: req.t('tasks.taskNotFound') || 'Task not found'
+            });
+        }
+
+        // Check if due date is being updated and handle overdue status
+        if (updateData.dueDate !== undefined) {
+            const now = new Date();
+            const newDueDate = updateData.dueDate ? new Date(updateData.dueDate) : null;
+
+            // If task is currently overdue and new due date is in the future, mark as active
+            if (existingTask.status === 'overdue' && newDueDate && newDueDate > now) {
+                updateData.status = 'active';
+            }
+            // If task is active and new due date is in the past, mark as overdue
+            else if (existingTask.status === 'active' && newDueDate && newDueDate < now) {
+                updateData.status = 'overdue';
+            }
+        }
+
         // Find and update task
         const task = await Task.findOneAndUpdate(
             { _id: id, userId },
@@ -338,8 +541,8 @@ router.patch('/:id/toggle', async (req, res) => {
         }
 
         // Toggle status
-        const updatedTask = task.status === 'completed' 
-            ? await task.markPending()
+        const updatedTask = task.status === 'completed'
+            ? await task.markActive()
             : await task.markCompleted();
 
         // Log task status toggle with enhanced logging

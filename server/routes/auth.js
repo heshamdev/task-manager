@@ -49,15 +49,18 @@ router.post('/register', validateRegistration, async (req, res) => {
         // Generate JWT token
         const token = generateToken(user._id, user.isAdmin);
 
+        // Set userId for logging
+        req.userId = user._id.toString();
+
         // Log user registration with enhanced logging
-        logger.logUserAction(
-            user._id.toString(),
-            'REGISTER',
-            { email: user.email, name: user.name },
-            req.ip,
-            user.email,
-            req.currentView || 'register'
-        );
+        await logRequestAction(req, 'REGISTER', {
+            registeredUser: {
+                email: user.email,
+                name: user.name,
+                id: user._id.toString()
+            },
+            success: true
+        }, res);
 
         res.status(201).json({
             success: true,
@@ -128,15 +131,18 @@ router.post('/login', validateLogin, async (req, res) => {
         // Generate JWT token
         const token = generateToken(user._id, user.isAdmin);
 
+        // Set userId for logging
+        req.userId = user._id.toString();
+
         // Log user login with enhanced logging
-        logger.logUserAction(
-            user._id.toString(),
-            'LOGIN',
-            { email: user.email },
-            req.ip,
-            user.email,
-            req.currentView || 'login'
-        );
+        await logRequestAction(req, 'LOGIN', {
+            loggedInUser: {
+                email: user.email,
+                id: user._id.toString(),
+                lastLogin: user.lastLogin
+            },
+            success: true
+        }, res);
 
         res.json({
             success: true,
@@ -239,12 +245,12 @@ router.put('/profile', authenticateToken, async (req, res) => {
         );
 
         // Log profile update
-        logger.logUserAction(
-            userId,
-            'PROFILE_UPDATE',
-            { updatedFields: Object.keys(updateData) },
-            req.ip
-        );
+        await logRequestAction(req, 'PROFILE_UPDATE', {
+            updatedFields: Object.keys(updateData),
+            oldEmail: req.user?.email,
+            newEmail: user.email,
+            success: true
+        }, res);
 
         res.json({
             success: true,
@@ -266,7 +272,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
         if (error.name === 'ValidationError') {
             return res.status(400).json({
                 success: false,
-                message: req.t('validation.validationFailed') || 'Validation failed',
+                message: req.t('errors.validationFailed') || 'Validation failed',
                 errors: Object.values(error.errors).map(err => err.message)
             });
         }
@@ -310,12 +316,10 @@ router.put('/change-password', authenticateToken, validatePasswordChange, async 
         await user.save();
 
         // Log password change
-        logger.logUserAction(
-            userId,
-            'PASSWORD_CHANGE',
-            {},
-            req.ip
-        );
+        await logRequestAction(req, 'PASSWORD_CHANGE', {
+            success: true,
+            securityEvent: true
+        }, res);
 
         res.json({
             success: true,
@@ -342,12 +346,9 @@ router.put('/change-password', authenticateToken, validatePasswordChange, async 
 router.post('/logout', authenticateToken, async (req, res) => {
     try {
         // Log user logout
-        logger.logUserAction(
-            req.userId,
-            'LOGOUT',
-            {},
-            req.ip
-        );
+        await logRequestAction(req, 'LOGOUT', {
+            success: true
+        }, res);
 
         res.json({
             success: true,

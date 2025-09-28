@@ -1,124 +1,142 @@
 <template>
   <div class="tasks-page">
-    <v-container fluid>
-      <v-row>
-      <!-- Sidebar - Task Creation -->
-      <v-col cols="12" md="4" lg="3">
-        <v-card elevation="4" class="task-form-card">
-          <v-card-title class="text-h5 primary--text">
-            <v-icon left color="primary">mdi-plus-circle</v-icon>
-            {{ $t('tasks.createTask') }}
-          </v-card-title>
-          
-          <v-card-text>
-            <VeeForm @submit="createTask" class="task-form">
-              <VeeField
-                v-model="form.title"
-                name="title"
-                rules="required|min:3|max:100"
-                v-slot="{ field, errorMessage }"
-              >
-                <v-text-field
-                  v-bind="field"
-                  :label="$t('tasks.title')"
-                  prepend-inner-icon="mdi-format-title"
-                  variant="outlined"
-                  :error-messages="errorMessage"
-                  :placeholder="$t('tasks.titlePlaceholder')"
-                  class="mb-4"
-                />
-              </VeeField>
-              
-              <VeeField
-                v-model="form.description"
-                name="description"
-                v-slot="{ field }"
-              >
-                <v-textarea
-                  v-bind="field"
-                  :label="$t('tasks.description')"
-                  prepend-inner-icon="mdi-text"
-                  variant="outlined"
-                  rows="3"
-                  :placeholder="$t('tasks.descriptionPlaceholder')"
-                  class="mb-4"
-                />
-              </VeeField>
-              
-              <VeeField
-                v-model="form.dueDate"
-                name="dueDate"
-                rules="required|validDate|futureDate"
-                v-slot="{ field, errorMessage }"
-              >
-                <v-text-field
-                  v-bind="field"
-                  :label="$t('tasks.dueDate')"
-                  type="date"
-                  prepend-inner-icon="mdi-calendar"
-                  variant="outlined"
-                  :error-messages="errorMessage"
-                  class="mb-4"
-                />
-              </VeeField>
-              
-              <v-select
-                v-model="form.priority"
-                :label="$t('common.priority')"
-                :items="priorityOptions"
-                item-title="text"
-                item-value="value"
-                prepend-inner-icon="mdi-flag"
-                variant="outlined"
-                class="mb-4"
-              />
-              
-              <v-btn
-                type="submit"
-                color="primary"
-                size="large"
-                block
-                prepend-icon="mdi-plus"
-                :disabled="isLoadingTasks"
-                :loading="isLoadingTasks"
-              >
-                {{ $t('tasks.createTask') }}
-              </v-btn>
-              
-              <v-alert v-if="formError" type="error" class="mt-4">
-                {{ formError }}
-              </v-alert>
-            </VeeForm>
-          </v-card-text>
-        </v-card>
+    <!-- Floating Action Button -->
+    <v-tooltip text-tooltip location="left">
+      <template v-slot:activator="{ props }">
+        <v-btn
+          v-bind="props"
+          class="floating-create-btn"
+          color="primary"
+          size="large"
+          icon
+          elevation="8"
+          @click="openCreateDialog"
+        >
+          <v-icon size="large">mdi-plus</v-icon>
+        </v-btn>
+      </template>
+      <span>{{ $t('tasks.createNewTask') }}</span>
+    </v-tooltip>
 
-        <!-- Stats Card -->
-        <v-card v-if="stats" elevation="4" class="mt-4">
+    <v-container fluid class="pt-6">
+      <v-row>
+      <!-- Filters Sidebar -->
+      <v-col cols="12" md="4" lg="3">
+        <!-- Professional Filters Card -->
+        <v-card elevation="4" class="filters-card">
           <v-card-title class="text-h6">
-            <v-icon left>mdi-chart-line</v-icon>
-            {{ $t('tasks.statistics') }}
+            <v-icon left>mdi-filter</v-icon>
+            {{ $t('tasks.filters') }}
           </v-card-title>
-          <v-card-text>
+          <v-card-text class="pt-4">
+            <!-- Search -->
+            <v-text-field
+              v-model="filters.search"
+              :label="$t('tasks.search')"
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+              density="compact"
+              clearable
+              class="mb-3"
+              @update:model-value="applyFilters"
+            />
+
+            <!-- Status Filter -->
+            <v-select
+              v-model="filters.status"
+              :label="$t('tasks.filterByStatus')"
+              :placeholder="$t('tasks.selectStatus')"
+              :items="statusFilterOptions"
+              item-title="text"
+              item-value="value"
+              prepend-inner-icon="mdi-check-circle"
+              variant="outlined"
+              density="compact"
+              clearable
+              class="mb-3"
+              @update:model-value="applyFilters"
+              persistent-placeholder
+            />
+
+            <!-- Priority Filter -->
+            <v-select
+              v-model="filters.priority"
+              :label="$t('tasks.filterByPriority')"
+              :placeholder="$t('common.selectPriority')"
+              :items="priorityOptions"
+              item-title="text"
+              item-value="value"
+              prepend-inner-icon="mdi-flag"
+              variant="outlined"
+              density="compact"
+              clearable
+              class="mb-3"
+              @update:model-value="applyFilters"
+              persistent-placeholder
+            />
+
+            <!-- Date Filter -->
+            <v-select
+              v-model="filters.dateFilter"
+              :label="$t('tasks.filterByDate')"
+              :placeholder="$t('tasks.selectDateFilter')"
+              :items="dateFilterOptions"
+              item-title="text"
+              item-value="value"
+              prepend-inner-icon="mdi-calendar"
+              variant="outlined"
+              density="compact"
+              clearable
+              class="mb-3"
+              @update:model-value="applyFilters"
+              persistent-placeholder
+            />
+
+            <!-- Sort Options -->
             <v-row>
-              <v-col cols="4">
-                <div class="text-center">
-                  <div class="text-h4 primary--text">{{ stats.total }}</div>
-                  <div class="text-caption">Total</div>
-                </div>
+              <v-col cols="8">
+                <v-select
+                  v-model="filters.sortBy"
+                  :label="$t('tasks.sortBy')"
+                  :placeholder="$t('tasks.selectSortField')"
+                  :items="sortOptions"
+                  item-title="text"
+                  item-value="value"
+                  prepend-inner-icon="mdi-sort"
+                  variant="outlined"
+                  density="compact"
+                  class="mb-3"
+                  @update:model-value="applyFilters"
+                  persistent-placeholder
+                />
               </v-col>
               <v-col cols="4">
-                <div class="text-center">
-                  <div class="text-h4 success--text">{{ stats.completed }}</div>
-                  <div class="text-caption">Completed</div>
-                </div>
-              </v-col>
-              <v-col cols="4">
-                <div class="text-center">
-                  <div class="text-h4 warning--text">{{ stats.pending }}</div>
-                  <div class="text-caption">Pending</div>
-                </div>
+                <v-select
+                  v-model="filters.sortOrder"
+                  :label="$t('tasks.sortOrder')"
+                  :placeholder="$t('tasks.selectSortOrder')"
+                  :items="sortOrderOptions"
+                  item-title="text"
+                  item-value="value"
+                  variant="outlined"
+                  density="compact"
+                  class="mb-3"
+                  @update:model-value="applyFilters"
+                  persistent-placeholder
+                />
               </v-col>
             </v-row>
+
+            <!-- Clear Filters Button -->
+            <v-btn
+              color="secondary"
+              variant="outlined"
+              block
+              prepend-icon="mdi-filter-off"
+              @click="clearFilters"
+            >
+              {{ $t('tasks.clearFilters') }}
+            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
@@ -155,10 +173,6 @@
           <v-card-title class="d-flex align-center">
             <v-icon left color="primary">mdi-clipboard-list</v-icon>
             <span class="text-h5">{{ $t('tasks.yourTasks') }}</span>
-            <v-spacer></v-spacer>
-            <v-chip color="primary" variant="outlined" size="small" class="mr-2 header-chip">
-              {{ tasks.length }} {{ $t('tasks.total') }}
-            </v-chip>
           </v-card-title>
           
           <!-- Tasks List -->
@@ -178,12 +192,12 @@
                   <v-checkbox
                     :model-value="task.status === 'completed'"
                     @update:model-value="(value) => handleTaskToggle(task, value)"
-                    :disabled="task.status === 'expired'"
+                    :disabled="task.status === 'overdue'"
                     color="success"
                     hide-details
                     density="compact"
                     class="task-checkbox"
-                    :class="{ 'task-expired': task.status === 'expired' }"
+                    :class="{ 'task-overdue': task.status === 'overdue' }"
                   />
                 </template>
 
@@ -206,7 +220,7 @@
                     {{ getPriorityText(task.priority) }}
                   </v-chip>
                   <v-chip
-                    :color="task.status === 'completed' ? 'success' : task.status === 'expired' ? 'error' : 'warning'"
+                    :color="task.status === 'completed' ? 'success' : task.status === 'overdue' ? 'error' : 'info'"
                     size="small"
                     variant="outlined"
                     class="ml-2 task-chip"
@@ -224,6 +238,16 @@
                     <v-icon size="small" class="chip-icon">mdi-calendar</v-icon>
                     {{ formatDate(task.dueDate) }}
                   </v-chip>
+                  <v-chip
+                    v-if="task.updatedAt && task.updatedAt !== task.createdAt && isRecentlyUpdated(task.updatedAt)"
+                    color="info"
+                    size="small"
+                    variant="outlined"
+                    class="ml-2 task-chip updated-chip"
+                  >
+                    <v-icon size="small" class="chip-icon">mdi-pencil</v-icon>
+                    {{ $t('tasks.updated') }}
+                  </v-chip>
                 </div>
 
                 <template v-slot:append>
@@ -233,7 +257,14 @@
                       :color="task.status === 'completed' ? 'warning' : 'success'"
                       variant="text"
                       @click="toggle(task)"
-                      :title="task.status === 'completed' ? $t('tasks.markPending') : $t('tasks.markComplete')"
+                      :title="task.status === 'completed' ? $t('tasks.markActive') : $t('tasks.markComplete')"
+                    />
+                    <v-btn
+                      icon="mdi-pencil"
+                      color="primary"
+                      variant="text"
+                      @click="editTask(task)"
+                      :title="$t('tasks.editTask')"
                     />
                     <v-btn
                       icon="mdi-delete"
@@ -259,6 +290,71 @@
               {{ $t('tasks.createFirstTask') }}
             </div>
           </v-card-text>
+
+          <!-- Pagination Controls -->
+          <v-card-text v-if="tasks.length > 0 && pagination.totalPages > 1" class="py-3">
+            <div class="d-flex align-center justify-center flex-wrap ga-2">
+              <!-- First Page Button -->
+              <v-btn
+                size="small"
+                variant="outlined"
+                :disabled="!pagination.hasPrev"
+                @click="firstPage"
+                :title="$t('pagination.firstPage')"
+              >
+                <v-icon>mdi-page-first</v-icon>
+              </v-btn>
+
+              <!-- Previous Page Button -->
+              <v-btn
+                size="small"
+                variant="outlined"
+                :disabled="!pagination.hasPrev"
+                @click="prevPage"
+                :title="$t('pagination.previousPage')"
+              >
+                <v-icon>mdi-chevron-left</v-icon>
+                {{ $t('pagination.previous') }}
+              </v-btn>
+
+              <!-- Page Number Display -->
+              <div class="d-flex align-center mx-3">
+                <span class="text-body-2">
+                  {{ $t('pagination.showing') }} {{ pagination.page }} {{ $t('pagination.of') }} {{ pagination.totalPages }}
+                </span>
+              </div>
+
+              <!-- Next Page Button -->
+              <v-btn
+                size="small"
+                variant="outlined"
+                :disabled="!pagination.hasNext"
+                @click="nextPage"
+                :title="$t('pagination.nextPage')"
+              >
+                {{ $t('pagination.next') }}
+                <v-icon>mdi-chevron-right</v-icon>
+              </v-btn>
+
+              <!-- Last Page Button -->
+              <v-btn
+                size="small"
+                variant="outlined"
+                :disabled="!pagination.hasNext"
+                @click="lastPage"
+                :title="$t('pagination.lastPage')"
+              >
+                <v-icon>mdi-page-last</v-icon>
+              </v-btn>
+            </div>
+
+            <!-- Page Info -->
+            <div class="text-center mt-2">
+              <span class="text-caption text-medium-emphasis">
+                {{ $t('pagination.showing') }} {{ ((pagination.page - 1) * pagination.limit) + 1 }}-{{ Math.min(pagination.page * pagination.limit, pagination.total) }} {{ $t('pagination.of') }} {{ pagination.total }} {{ $t('pagination.results') }}
+              </span>
+            </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -269,19 +365,19 @@
         <v-card-title>
           <span class="text-h5">{{ selectedTask?.title }}</span>
         </v-card-title>
-        
+
         <v-card-text>
           <v-list>
             <v-list-item>
               <v-list-item-title>{{ $t('tasks.description') }}</v-list-item-title>
               <v-list-item-subtitle>{{ selectedTask?.description || $t('tasks.noDescription') }}</v-list-item-subtitle>
             </v-list-item>
-            
+
             <v-list-item>
               <v-list-item-title>{{ $t('tasks.dueDate') }}</v-list-item-title>
               <v-list-item-subtitle>{{ formatDate(selectedTask?.dueDate) }}</v-list-item-subtitle>
             </v-list-item>
-            
+
             <v-list-item>
               <v-list-item-title>{{ $t('common.priority') }}</v-list-item-title>
               <v-list-item-subtitle>
@@ -294,14 +390,24 @@
             <v-list-item>
               <v-list-item-title>{{ $t('common.status') }}</v-list-item-title>
               <v-list-item-subtitle>
-                <v-chip :color="selectedTask?.status === 'completed' ? 'success' : selectedTask?.status === 'expired' ? 'error' : 'warning'" size="small" class="dialog-chip">
+                <v-chip :color="selectedTask?.status === 'completed' ? 'success' : selectedTask?.status === 'overdue' ? 'error' : 'info'" size="small" class="dialog-chip">
                   {{ getStatusText(selectedTask?.status) }}
                 </v-chip>
               </v-list-item-subtitle>
             </v-list-item>
+
+            <v-list-item v-if="selectedTask?.createdAt">
+              <v-list-item-title>{{ $t('tasks.createdAt') }}</v-list-item-title>
+              <v-list-item-subtitle>{{ formatDateTime(selectedTask?.createdAt) }}</v-list-item-subtitle>
+            </v-list-item>
+
+            <v-list-item v-if="selectedTask?.updatedAt && selectedTask?.updatedAt !== selectedTask?.createdAt">
+              <v-list-item-title>{{ $t('tasks.lastUpdated') }}</v-list-item-title>
+              <v-list-item-subtitle>{{ formatDateTime(selectedTask?.updatedAt) }}</v-list-item-subtitle>
+            </v-list-item>
           </v-list>
         </v-card-text>
-        
+
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="error" @click="deleteTask(selectedTask)">
@@ -313,12 +419,223 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Create Task Dialog -->
+    <v-dialog v-model="showCreateDialog" max-width="600px">
+      <v-card>
+        <v-card-title class="text-h5 primary--text">
+          <v-icon left color="primary">mdi-plus-circle</v-icon>
+          {{ $t('tasks.createTask') }}
+        </v-card-title>
+
+        <v-card-text>
+          <VeeForm @submit="createTask" class="task-form" :key="'create-form'" id="create-task-form">
+            <VeeField
+              v-model="form.title"
+              name="title"
+              rules="required|min:3|max:100"
+              v-slot="{ field, errorMessage }"
+            >
+              <v-text-field
+                v-bind="field"
+                :label="$t('tasks.title')"
+                prepend-inner-icon="mdi-format-title"
+                variant="outlined"
+                :error-messages="errorMessage"
+                ref="titleInput"
+                autofocus
+                :placeholder="$t('tasks.titlePlaceholder')"
+                class="mb-4"
+              />
+            </VeeField>
+
+            <VeeField
+              v-model="form.description"
+              name="description"
+              v-slot="{ field }"
+            >
+              <v-textarea
+                v-bind="field"
+                :label="$t('tasks.description')"
+                prepend-inner-icon="mdi-text"
+                variant="outlined"
+                rows="3"
+                :placeholder="$t('tasks.descriptionPlaceholder')"
+                class="mb-4"
+              />
+            </VeeField>
+
+            <VeeField
+              v-model="form.dueDate"
+              name="dueDate"
+              rules="required|validDate|futureDate"
+              v-slot="{ field, errorMessage }"
+            >
+              <v-text-field
+                v-bind="field"
+                :label="$t('tasks.dueDate')"
+                type="date"
+                prepend-inner-icon="mdi-calendar"
+                variant="outlined"
+                :error-messages="errorMessage"
+                class="mb-4"
+              />
+            </VeeField>
+
+            <VeeField
+              v-model="form.priority"
+              name="priority"
+              rules="required"
+              v-slot="{ field, errorMessage }"
+            >
+              <v-select
+                v-bind="field"
+                :label="$t('common.priority')"
+                :placeholder="$t('common.selectPriority')"
+                :items="priorityOptions"
+                item-title="text"
+                item-value="value"
+                prepend-inner-icon="mdi-flag"
+                variant="outlined"
+                :error-messages="errorMessage"
+                class="mb-4"
+                persistent-placeholder
+              />
+            </VeeField>
+
+            <v-alert v-if="formError" type="error" class="mb-4">
+              {{ formError }}
+            </v-alert>
+          </VeeForm>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="cancelCreate">
+            {{ $t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            type="submit"
+            form="create-task-form"
+            :loading="isLoadingTasks"
+            :disabled="isLoadingTasks"
+          >
+            {{ $t('tasks.createTask') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit Task Dialog -->
+    <v-dialog v-model="showEditDialog" max-width="600px">
+      <v-card>
+        <v-card-title class="text-h5 primary--text">
+          <v-icon left color="primary">mdi-pencil</v-icon>
+          {{ $t('tasks.editTask') }}
+        </v-card-title>
+
+        <v-card-text>
+          <VeeForm @submit="updateTask" class="edit-task-form" :key="taskBeingEdited?._id || 'new'">
+            <VeeField
+              :value="editForm.title"
+              name="title"
+              rules="required|min:3|max:100"
+              v-slot="{ field, errorMessage }"
+            >
+              <v-text-field
+                v-model="editForm.title"
+                :label="$t('tasks.title')"
+                prepend-inner-icon="mdi-format-title"
+                variant="outlined"
+                :error-messages="errorMessage"
+                :placeholder="$t('tasks.titlePlaceholder')"
+                class="mb-4"
+              />
+            </VeeField>
+
+            <VeeField
+              :value="editForm.description"
+              name="description"
+              v-slot="{ field }"
+            >
+              <v-textarea
+                v-model="editForm.description"
+                :label="$t('tasks.description')"
+                prepend-inner-icon="mdi-text"
+                variant="outlined"
+                rows="3"
+                :placeholder="$t('tasks.descriptionPlaceholder')"
+                class="mb-4"
+              />
+            </VeeField>
+
+            <VeeField
+              :value="editForm.dueDate"
+              name="dueDate"
+              rules="validDate|futureDate"
+              v-slot="{ field, errorMessage }"
+            >
+              <v-text-field
+                v-model="editForm.dueDate"
+                :label="$t('tasks.dueDate')"
+                type="date"
+                prepend-inner-icon="mdi-calendar"
+                variant="outlined"
+                :error-messages="errorMessage"
+                class="mb-4"
+              />
+            </VeeField>
+
+            <VeeField
+              :value="editForm.priority"
+              name="priority"
+              rules="required"
+              v-slot="{ field, errorMessage }"
+            >
+              <v-select
+                v-model="editForm.priority"
+                :label="$t('common.priority')"
+                :placeholder="$t('common.selectPriority')"
+                :items="priorityOptions"
+                item-title="text"
+                item-value="value"
+                prepend-inner-icon="mdi-flag"
+                variant="outlined"
+                :error-messages="errorMessage"
+                class="mb-4"
+                persistent-placeholder
+              />
+            </VeeField>
+
+            <v-alert v-if="editError" type="error" class="mb-4">
+              {{ editError }}
+            </v-alert>
+          </VeeForm>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="cancelEdit">
+            {{ $t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            @click="updateTask"
+            :loading="isUpdatingTask"
+            :disabled="isUpdatingTask"
+          >
+            {{ $t('tasks.updateTask') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     </v-container>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, computed } from 'vue'
+import { onMounted, reactive, ref, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Field as VeeField, Form as VeeForm, ErrorMessage as VeeErrorMessage } from 'vee-validate'
@@ -333,11 +650,67 @@ const formError = ref('')
 const showTaskDetails = ref(false)
 const selectedTask = ref(null)
 const isLoadingTasks = ref(true)
+const showCreateDialog = ref(false)
+const showEditDialog = ref(false)
+const titleInput = ref(null)
+const editForm = reactive({ title: '', description: '', dueDate: '', priority: 'medium' })
+const editError = ref('')
+const isUpdatingTask = ref(false)
+const taskBeingEdited = ref(null)
+const filters = reactive({
+  search: '',
+  status: '',
+  priority: '',
+  dateFilter: '',
+  sortBy: 'dueDate',
+  sortOrder: 'asc'
+})
+const isFiltering = ref(false)
+const pagination = reactive({
+  page: 1,
+  totalPages: 1,
+  total: 0,
+  limit: 5,
+  hasNext: false,
+  hasPrev: false
+})
 // Priority options for the select dropdown with i18n
 const priorityOptions = computed(() => [
   { text: $t('tasks.low'), value: 'low' },
   { text: $t('tasks.medium'), value: 'medium' },
   { text: $t('tasks.high'), value: 'high' }
+])
+
+// Status filter options
+const statusFilterOptions = computed(() => [
+  { text: $t('tasks.all'), value: '' },
+  { text: $t('tasks.active'), value: 'active' },
+  { text: $t('tasks.completed'), value: 'completed' },
+  { text: $t('tasks.overdue'), value: 'overdue' }
+])
+
+// Date filter options
+const dateFilterOptions = computed(() => [
+  { text: $t('tasks.today'), value: 'today' },
+  { text: $t('tasks.tomorrow'), value: 'tomorrow' },
+  { text: $t('tasks.thisWeek'), value: 'thisWeek' },
+  { text: $t('tasks.overdue'), value: 'overdue' },
+  { text: $t('tasks.upcoming'), value: 'upcoming' },
+  { text: $t('tasks.noDueDate'), value: 'noDueDate' }
+])
+
+// Sort options
+const sortOptions = computed(() => [
+  { text: $t('tasks.sortByCreated'), value: 'createdAt' },
+  { text: $t('tasks.sortByUpdated'), value: 'updatedAt' },
+  { text: $t('tasks.sortByDueDate'), value: 'dueDate' },
+  { text: $t('tasks.sortByPriority'), value: 'priority' }
+])
+
+// Sort order options
+const sortOrderOptions = computed(() => [
+  { text: $t('tasks.descending'), value: 'desc' },
+  { text: $t('tasks.ascending'), value: 'asc' }
 ])
 
 // Computed property to sort tasks by urgency and priority
@@ -404,29 +777,29 @@ function getPriorityText(priority) {
 // Function to get translated status text
 function getStatusText(status) {
   const translations = {
-    pending: $t('tasks.pending'),
+    active: $t('tasks.active'),
     completed: $t('tasks.completed'),
-    expired: $t('tasks.expired') || 'Expired'
+    overdue: $t('tasks.overdue')
   }
   return translations[status] || status
 }
 
-// Helper function to check if task is expired
-function isTaskExpired(task) {
-  return task.status === 'pending' && getDueDateUrgency(task.dueDate) === 'overdue'
+// Helper function to check if task is overdue
+function isTaskOverdue(task) {
+  return task.status === 'active' && getDueDateUrgency(task.dueDate) === 'overdue'
 }
 
-// Function to automatically update expired tasks using backend endpoint
-async function updateExpiredTasks() {
+// Function to automatically update overdue tasks using backend endpoint
+async function updateOverdueTasks() {
   try {
-    const response = await api.post('/api/tasks/update-expired')
+    const response = await api.post('/api/tasks/update-overdue')
 
     if (response.data.success && response.data.data.modifiedCount > 0) {
-      console.log(`Updated ${response.data.data.modifiedCount} expired tasks`)
+      // Updated overdue tasks successfully
       await fetchStats() // Refresh stats to reflect the changes
     }
   } catch (error) {
-    console.error('Error updating expired tasks:', error)
+    console.error('Error updating overdue tasks:', error)
   }
 }
 
@@ -468,6 +841,38 @@ function formatDate(dateString, options = {}) {
   }
 }
 
+// Format date and time for detailed view
+function formatDateTime(dateString) {
+  if (!dateString) return ''
+
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now - date
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  // Show relative time for recent updates
+  if (diffMs < 60000) { // Less than 1 minute
+    return $t('dates.justNow')
+  } else if (diffMs < 3600000) { // Less than 1 hour
+    const minutes = Math.floor(diffMs / (1000 * 60))
+    return $t('dates.minutesAgo', { minutes })
+  } else if (diffHours < 24) { // Less than 24 hours
+    return $t('dates.hoursAgo', { hours: diffHours })
+  } else if (diffDays < 7) { // Less than 7 days
+    return $t('dates.daysAgo', { days: diffDays })
+  } else {
+    // Use full date and time for older dates
+    return date.toLocaleDateString($t('dates.locale'), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+}
+
 // Get due date urgency level for styling
 function getDueDateUrgency(dateString) {
   if (!dateString) return 'none'
@@ -500,15 +905,40 @@ function getUrgencyColor(dateString) {
   return colors[urgency] || 'info'
 }
 
+// Check if task was recently updated (within last 24 hours)
+function isRecentlyUpdated(updatedAt) {
+  if (!updatedAt) return false
+  const now = new Date()
+  const updated = new Date(updatedAt)
+  const diffMs = now - updated
+  const diffHours = diffMs / (1000 * 60 * 60)
+  return diffHours <= 24 // Show "updated" chip for 24 hours
+}
+
 
 async function fetchTasks() {
   try {
     isLoadingTasks.value = true
-    const { data } = await api.get('/api/tasks')
-    tasks.value = data.data.tasks
 
-    // Check and update expired tasks
-    await updateExpiredTasks()
+    // Use filtering if any filters are applied
+    if (isFiltering.value) {
+      await fetchFilteredTasks()
+    } else {
+      const params = new URLSearchParams()
+      params.append('page', pagination.page.toString())
+      params.append('limit', pagination.limit.toString())
+
+      const { data } = await api.get(`/api/tasks?${params.toString()}`)
+      tasks.value = data.data.tasks
+
+      // Update pagination info
+      if (data.data.pagination) {
+        pagination.totalPages = data.data.pagination.totalPages
+        pagination.total = data.data.pagination.totalTasks
+        pagination.hasNext = data.data.pagination.hasNextPage
+        pagination.hasPrev = data.data.pagination.hasPrevPage
+      }
+    }
 
     await fetchStats()
   } catch (e) {
@@ -522,6 +952,99 @@ async function fetchTasks() {
   }
 }
 
+// Function to fetch filtered tasks using the professional filtering API
+async function fetchFilteredTasks() {
+  try {
+    const params = new URLSearchParams()
+
+    if (filters.search) params.append('search', filters.search)
+    if (filters.status) params.append('status', filters.status)
+    if (filters.priority) params.append('priority', filters.priority)
+    if (filters.dateFilter) params.append('dateFilter', filters.dateFilter)
+    if (filters.sortBy) params.append('sortBy', filters.sortBy)
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
+    params.append('page', pagination.page.toString())
+    params.append('limit', pagination.limit.toString())
+
+    const { data } = await api.get(`/api/tasks/filter?${params.toString()}`)
+    tasks.value = data.data.tasks
+
+    // Update pagination info
+    if (data.data.pagination) {
+      pagination.totalPages = data.data.pagination.totalPages
+      pagination.total = data.data.pagination.totalTasks
+      pagination.hasNext = data.data.pagination.hasNextPage
+      pagination.hasPrev = data.data.pagination.hasPrevPage
+    }
+  } catch (error) {
+    console.error('Fetch filtered tasks error:', error)
+    // Fallback to regular fetch if filtering fails
+    const { data } = await api.get('/api/tasks')
+    tasks.value = data.data.tasks
+  }
+}
+
+// Apply filters function
+async function applyFilters() {
+  // Check if any filter is active
+  isFiltering.value = !!(
+    filters.search ||
+    filters.status ||
+    filters.priority ||
+    filters.dateFilter ||
+    filters.sortBy !== 'dueDate' ||
+    filters.sortOrder !== 'asc'
+  )
+
+  pagination.page = 1 // Reset to first page when applying filters
+  await fetchTasks()
+}
+
+// Clear all filters
+function clearFilters() {
+  filters.search = ''
+  filters.status = ''
+  filters.priority = ''
+  filters.dateFilter = ''
+  filters.sortBy = 'dueDate'
+  filters.sortOrder = 'asc'
+  isFiltering.value = false
+  pagination.page = 1 // Reset to first page when clearing filters
+  fetchTasks()
+}
+
+// Pagination functions
+function goToPage(page) {
+  if (page >= 1 && page <= pagination.totalPages) {
+    pagination.page = page
+    fetchTasks()
+  }
+}
+
+function nextPage() {
+  if (pagination.hasNext) {
+    pagination.page++
+    fetchTasks()
+  }
+}
+
+function prevPage() {
+  if (pagination.hasPrev) {
+    pagination.page--
+    fetchTasks()
+  }
+}
+
+function firstPage() {
+  pagination.page = 1
+  fetchTasks()
+}
+
+function lastPage() {
+  pagination.page = pagination.totalPages
+  fetchTasks()
+}
+
 async function fetchStats() {
   try {
     const { data } = await api.get('/api/tasks/stats')
@@ -531,32 +1054,55 @@ async function fetchStats() {
   }
 }
 
-async function createTask(values, { resetForm }) {
+async function createTask(values, { resetForm, setErrors }) {
   formError.value = ''
-  
+
   try {
     const { data } = await api.post('/api/tasks', {
       title: values.title,
       description: values.description,
-      dueDate: form.dueDate,
-      priority: form.priority
+      dueDate: values.dueDate,
+      priority: values.priority
     })
-    
-    const newTask = data.data?.task || data.data || data
-    if (newTask && newTask._id) {
-      tasks.value.unshift(newTask)
-    }
-    
+
+    // Reset form and close dialog
     resetForm()
     form.title = ''
     form.description = ''
     form.dueDate = ''
     form.priority = 'medium'
-    
+    showCreateDialog.value = false
+
+    // Go to first page to see new task and refetch
+    pagination.page = 1
+    await fetchTasks()
     await fetchStats()
   } catch (error) {
     console.error('Task creation failed:', error)
-    formError.value = error.response?.data?.message || 'Failed to create task'
+
+    // Handle validation errors from server with improved formatting
+    if (error.response?.status === 400 && error.response?.data?.validationFailed && error.response?.data?.errors) {
+      const serverErrors = {}
+      error.response.data.errors.forEach(err => {
+        // Use the field name from the new error format
+        const fieldName = err.field || err.path
+        if (fieldName) {
+          // Use the formatted message that includes user-friendly field names
+          serverErrors[fieldName] = err.message
+        }
+      })
+
+      // Set field-specific errors
+      if (Object.keys(serverErrors).length > 0) {
+        setErrors(serverErrors)
+        // Also show the main validation message for better UX
+        formError.value = error.response?.data?.message || $t('validation.validationFailed')
+        return
+      }
+    }
+
+    // Show general error if no specific field errors
+    formError.value = error.response?.data?.message || $t('errors.serverError') || 'Failed to create task'
   }
 }
 
@@ -570,11 +1116,8 @@ function handleTaskToggle(task, newValue) {
 
 async function toggle(t) {
   try {
-    const { data } = await api.patch(`/api/tasks/${t._id}/toggle`)
-    const idx = tasks.value.findIndex(x => x._id === t._id)
-    if (idx !== -1) {
-      tasks.value[idx] = data.data.task
-    }
+    await api.patch(`/api/tasks/${t._id}/toggle`)
+    await fetchTasks()
     await fetchStats()
   } catch (error) {
     console.error('Toggle task error:', error)
@@ -585,15 +1128,146 @@ async function toggle(t) {
 async function deleteTask(t) {
   try {
     await api.delete(`/api/tasks/${t._id}`)
-    tasks.value = tasks.value.filter(x => x._id !== t._id)
-    await fetchStats()
     showTaskDetails.value = false
+
+    // If we're on a page that becomes empty after deletion, go to previous page
+    if (tasks.value.length === 1 && pagination.page > 1) {
+      pagination.page--
+    }
+
+    await fetchTasks()
+    await fetchStats()
   } catch (error) {
     console.error('Delete task error:', error)
   }
 }
 
-onMounted(() => {
+function editTask(task) {
+  taskBeingEdited.value = task
+
+  // Populate form with current task values
+  editForm.title = task.title || ''
+  editForm.description = task.description || ''
+  editForm.priority = task.priority || 'medium'
+
+  // Handle date formatting properly
+  if (task.dueDate) {
+    try {
+      const date = new Date(task.dueDate)
+      editForm.dueDate = date.toISOString().split('T')[0]
+    } catch (e) {
+      editForm.dueDate = ''
+    }
+  } else {
+    editForm.dueDate = ''
+  }
+
+  editError.value = ''
+  showEditDialog.value = true
+
+  // Force Vue to update the DOM with new values
+  nextTick(() => {
+    // This ensures the form fields display the values immediately
+  })
+}
+
+async function updateTask(values, { setErrors } = {}) {
+  if (!taskBeingEdited.value) return
+
+  editError.value = ''
+  isUpdatingTask.value = true
+
+  try {
+    const updateData = {
+      title: values?.title || editForm.title,
+      description: values?.description || editForm.description,
+      priority: values?.priority || editForm.priority
+    }
+
+    if (values?.dueDate || editForm.dueDate) {
+      updateData.dueDate = values?.dueDate || editForm.dueDate
+    }
+
+    await api.put(`/api/tasks/${taskBeingEdited.value._id}`, updateData)
+
+    showEditDialog.value = false
+    await fetchTasks()
+    await fetchStats()
+
+  } catch (error) {
+    console.error('Task update failed:', error)
+
+    // Handle validation errors from server with improved formatting
+    if (error.response?.status === 400 && error.response?.data?.validationFailed && error.response?.data?.errors && setErrors) {
+      const serverErrors = {}
+      error.response.data.errors.forEach(err => {
+        // Use the field name from the new error format
+        const fieldName = err.field || err.path
+        if (fieldName) {
+          // Use the formatted message that includes user-friendly field names
+          serverErrors[fieldName] = err.message
+        }
+      })
+
+      // Set field-specific errors
+      if (Object.keys(serverErrors).length > 0) {
+        setErrors(serverErrors)
+        // Also show the main validation message for better UX
+        editError.value = error.response?.data?.message || $t('validation.validationFailed')
+        return
+      }
+    }
+
+    // Show general error if no specific field errors
+    editError.value = error.response?.data?.message || $t('errors.serverError') || 'Failed to update task'
+  } finally {
+    isUpdatingTask.value = false
+  }
+}
+
+function openCreateDialog() {
+  showCreateDialog.value = true
+  // Reset form when opening dialog
+  form.title = ''
+  form.description = ''
+  form.dueDate = ''
+  form.priority = 'medium'
+  formError.value = ''
+}
+
+function cancelCreate() {
+  showCreateDialog.value = false
+  form.title = ''
+  form.description = ''
+  form.dueDate = ''
+  form.priority = 'medium'
+  formError.value = ''
+}
+
+function cancelEdit() {
+  showEditDialog.value = false
+  editForm.title = ''
+  editForm.description = ''
+  editForm.dueDate = ''
+  editForm.priority = 'medium'
+  editError.value = ''
+  taskBeingEdited.value = null
+}
+
+// Watch for dialog open to focus first input
+watch(showCreateDialog, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      if (titleInput.value) {
+        titleInput.value.focus()
+      }
+    })
+  }
+})
+
+onMounted(async () => {
+  // Update overdue tasks once on initial load
+  await updateOverdueTasks()
   fetchTasks()
 })
 </script>
@@ -604,15 +1278,78 @@ onMounted(() => {
   min-height: calc(100vh - var(--header-height));
   margin: calc(-1 * var(--container-padding-md));
   padding: var(--container-padding-md);
+  padding-top: 0;
   transition: background-color 0.3s ease;
 }
 
 .task-form-card,
-.tasks-list-card {
+.tasks-list-card,
+.filters-card {
   background: var(--app-surface) !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 12px var(--app-shadow);
   border: 1px solid var(--app-border-color);
+}
+
+/* Fix select component placeholder/label overlap issues */
+:deep(.v-select .v-field__field) {
+  --v-field-label-scale: 0.75em;
+}
+
+:deep(.v-select .v-field--active .v-field__label) {
+  opacity: 1;
+  transform: translateY(-50%) scale(var(--v-field-label-scale));
+}
+
+:deep(.v-select .v-field--no-label .v-field__label) {
+  opacity: 0;
+}
+
+:deep(.v-select .v-field__label) {
+  transition: all 0.2s ease-in-out;
+  z-index: 1;
+}
+
+:deep(.v-select .v-field__input) {
+  padding-top: 8px;
+}
+
+/* Ensure placeholder text doesn't overlap with label */
+:deep(.v-select .v-field__field .v-field__input input) {
+  padding-top: 16px !important;
+}
+
+/* Fix for clearable select components */
+:deep(.v-select.v-field--clearable .v-field__label) {
+  max-width: calc(100% - 40px);
+}
+
+/* Floating Action Button */
+.floating-create-btn {
+  position: fixed !important;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 56px;
+  height: 56px;
+}
+
+@media (max-width: 768px) {
+  .floating-create-btn {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .tasks-page {
+    padding: 16px;
+    padding-top: 0;
+  }
+
+  .v-container.pt-6 {
+    padding-top: 24px !important;
+  }
 }
 
 .task-list-overlay {
@@ -1069,35 +1806,89 @@ onMounted(() => {
   /* Responsive adjustments handled by CSS variables */
 }
 
-/* Expired task styling */
-.task-expired {
-  opacity: 0.6 !important;
+/* Overdue task styling */
+.task-overdue {
+  opacity: 0.7 !important;
   cursor: not-allowed !important;
 }
 
-.task-expired .v-selection-control__input {
-  background-color: #f5f5f5 !important;
-  border-color: #e0e0e0 !important;
+.task-overdue .v-selection-control__input {
+  background-color: #ffebee !important;
+  border-color: #f44336 !important;
 }
 
-.dark-theme .task-expired .v-selection-control__input {
-  background-color: #424242 !important;
-  border-color: #616161 !important;
+.dark-theme .task-overdue .v-selection-control__input {
+  background-color: #4d2c2c !important;
+  border-color: #f44336 !important;
 }
 
-.task-item.task-status-expired {
+.task-item.task-status-overdue {
   border-left: 4px solid #f44336;
   background: rgba(244, 67, 54, 0.08);
+  opacity: 0.9;
+}
+
+.task-item.task-status-overdue .task-title {
+  color: #d32f2f !important;
+  font-weight: 600;
+}
+
+.task-item.task-status-overdue .task-description {
+  color: #f44336 !important;
   opacity: 0.8;
 }
 
-.task-item.task-status-expired .task-title {
-  color: #9e9e9e !important;
-  text-decoration: line-through;
+/* Updated task chip styling */
+.updated-chip {
+  background: rgba(33, 150, 243, 0.1) !important;
+  border-color: #2196f3 !important;
+  animation: pulse-blue 2s infinite;
 }
 
-.task-item.task-status-expired .task-description {
-  color: #bdbdbd !important;
-  opacity: 0.7;
+.updated-chip .v-chip__content {
+  color: #1976d2 !important;
+  font-weight: 600 !important;
+}
+
+.dark-theme .updated-chip {
+  background: rgba(33, 150, 243, 0.2) !important;
+}
+
+.dark-theme .updated-chip .v-chip__content {
+  color: #42a5f5 !important;
+}
+
+@keyframes pulse-blue {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Filters card styling */
+.filters-card {
+  background: var(--app-surface) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px var(--app-shadow);
+  border: 1px solid var(--app-border-color);
+}
+
+.filters-card .v-card-title {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(33, 150, 243, 0.05));
+  border-bottom: 1px solid var(--app-border-color);
+}
+
+.filters-card .v-text-field,
+.filters-card .v-select {
+  font-size: 0.9rem;
+}
+
+.filters-card .v-field--outlined {
+  border-radius: 8px;
+}
+
+/* Active filter indicator */
+.v-select--dirty .v-field__input,
+.v-text-field--dirty .v-field__input {
+  background: rgba(33, 150, 243, 0.05);
 }
 </style>

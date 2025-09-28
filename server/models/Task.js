@@ -15,42 +15,35 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, 'Task title is required'],
+        required: [true, 'Please enter a task title'],
         trim: true,
-        maxlength: [100, 'Task title cannot exceed 100 characters']
+        maxlength: [100, 'Task title is too long. Please use 100 characters or less']
     },
     description: {
         type: String,
         trim: true,
-        maxlength: [500, 'Task description cannot exceed 500 characters'],
+        maxlength: [500, 'Task description is too long. Please use 500 characters or less'],
         default: ''
     },
     status: {
         type: String,
         enum: {
-            values: ['pending', 'completed', 'expired'],
-            message: 'Status must be pending, completed, or expired'
+            values: ['active', 'completed', 'overdue'],
+            message: 'Please select a valid status: Active, Completed, or Overdue'
         },
-        default: 'pending'
+        default: 'active'
     },
     priority: {
         type: String,
         enum: {
             values: ['low', 'medium', 'high'],
-            message: 'Priority must be low, medium, or high'
+            message: 'Please select a valid priority level: Low, Medium, or High'
         },
         default: 'medium'
     },
     dueDate: {
         type: Date,
-        default: null,
-        validate: {
-            validator: function(value) {
-                // Due date should be in the future or null
-                return !value || value > new Date();
-            },
-            message: 'Due date must be in the future'
-        }
+        default: null
     },
     completedAt: {
         type: Date,
@@ -83,7 +76,7 @@ taskSchema.pre('save', function(next) {
     if (this.isModified('status')) {
         if (this.status === 'completed' && !this.completedAt) {
             this.completedAt = new Date();
-        } else if (this.status === 'pending') {
+        } else if (this.status === 'active') {
             this.completedAt = null;
         }
     }
@@ -103,25 +96,25 @@ taskSchema.methods.markCompleted = async function() {
 };
 
 /**
- * Instance method to mark task as pending
- * Updates task status to pending and clears completion timestamp
+ * Instance method to mark task as active
+ * Updates task status to active and clears completion timestamp
  *
  * @returns {Promise<Object>} Updated task document
  */
-taskSchema.methods.markPending = async function() {
-    this.status = 'pending';
+taskSchema.methods.markActive = async function() {
+    this.status = 'active';
     this.completedAt = null;
     return await this.save();
 };
 
 /**
- * Instance method to mark task as expired
- * Updates task status to expired (for overdue tasks)
+ * Instance method to mark task as overdue
+ * Updates task status to overdue (for overdue tasks)
  *
  * @returns {Promise<Object>} Updated task document
  */
-taskSchema.methods.markExpired = async function() {
-    this.status = 'expired';
+taskSchema.methods.markOverdue = async function() {
+    this.status = 'overdue';
     return await this.save();
 };
 
@@ -176,9 +169,9 @@ taskSchema.statics.getTaskStats = async function(userId) {
     // Format the results
     const result = {
         total: 0,
-        pending: 0,
+        active: 0,
         completed: 0,
-        expired: 0
+        overdue: 0
     };
 
     stats.forEach(stat => {
@@ -190,16 +183,16 @@ taskSchema.statics.getTaskStats = async function(userId) {
 };
 
 /**
- * Static method to find and update expired tasks
- * Finds tasks that are overdue and marks them as expired
+ * Static method to find and update overdue tasks
+ * Finds tasks that are overdue and marks them as overdue
  *
- * @param {string} userId - User ID to update expired tasks for (optional)
+ * @param {string} userId - User ID to update overdue tasks for (optional)
  * @returns {Promise<Object>} Object with count of updated tasks and updated task IDs
  */
-taskSchema.statics.updateExpiredTasks = async function(userId = null) {
+taskSchema.statics.updateOverdueTasks = async function(userId = null) {
     const now = new Date();
     const query = {
-        status: 'pending',
+        status: 'active',
         dueDate: { $ne: null, $lt: now }
     };
 
@@ -208,16 +201,16 @@ taskSchema.statics.updateExpiredTasks = async function(userId = null) {
         query.userId = new mongoose.Types.ObjectId(userId);
     }
 
-    // Find expired tasks
-    const expiredTasks = await this.find(query);
+    // Find overdue tasks
+    const overdueTasks = await this.find(query);
 
-    // Update tasks to expired status
-    const updateResult = await this.updateMany(query, { status: 'expired' });
+    // Update tasks to overdue status
+    const updateResult = await this.updateMany(query, { status: 'overdue' });
 
     return {
         modifiedCount: updateResult.modifiedCount,
-        expiredTaskIds: expiredTasks.map(task => task._id.toString()),
-        expiredTasks: expiredTasks
+        overdueTaskIds: overdueTasks.map(task => task._id.toString()),
+        overdueTasks: overdueTasks
     };
 };
 

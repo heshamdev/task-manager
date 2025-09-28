@@ -275,7 +275,11 @@ const filteredLogs = computed(() => {
     filtered = filtered.filter(log =>
       log.message.toLowerCase().includes(term) ||
       log.level.toLowerCase().includes(term) ||
-      (log.meta && JSON.stringify(log.meta).toLowerCase().includes(term))
+      (log.userEmail && log.userEmail.toLowerCase().includes(term)) ||
+      (log.action && log.action.toLowerCase().includes(term)) ||
+      (log.view && log.view.toLowerCase().includes(term)) ||
+      (log.meta && JSON.stringify(log.meta).toLowerCase().includes(term)) ||
+      (log.details && JSON.stringify(log.details).toLowerCase().includes(term))
     )
   }
 
@@ -302,19 +306,21 @@ async function fetchLogs() {
       logs.value = logLines.map(log => {
         if (typeof log === 'string') {
           try {
-            return JSON.parse(log)
+            const parsed = JSON.parse(log)
+            return { ...parsed, showMeta: false }
           } catch {
             // If parsing fails, create a basic log entry
             return {
               timestamp: new Date().toISOString(),
               level: 'info',
               message: log,
-              meta: {}
+              meta: {},
+              showMeta: false
             }
           }
         }
         return { ...log, showMeta: false }
-      })
+      }).reverse() // Show most recent logs first
     } else {
       throw new Error(response.data.message || 'Failed to fetch logs')
     }
@@ -390,11 +396,21 @@ function toggleMeta(item) {
 }
 
 function getEmailFromLog(item) {
-  // Try to extract email from meta data (new enhanced logging format)
+  // Try to extract email from direct properties (new enhanced logging format)
+  if (item.userEmail) return item.userEmail
+
+  // Try to extract email from meta data
   if (item.meta) {
     if (item.meta.userEmail) return item.meta.userEmail
     if (item.meta.email) return item.meta.email
     if (item.meta.user && item.meta.user.email) return item.meta.user.email
+  }
+
+  // Try to extract email from details (enhanced format)
+  if (item.details) {
+    if (item.details.authData && item.details.authData.email) return item.details.authData.email
+    if (item.details.registeredUser && item.details.registeredUser.email) return item.details.registeredUser.email
+    if (item.details.loggedInUser && item.details.loggedInUser.email) return item.details.loggedInUser.email
   }
 
   // Try to extract email from message using regex (fallback)
@@ -404,6 +420,9 @@ function getEmailFromLog(item) {
 }
 
 function getViewFromLog(item) {
+  // Extract view from direct properties (new enhanced logging format)
+  if (item.view) return item.view
+
   // Extract view from meta data
   if (item.meta && item.meta.view) {
     return item.meta.view
@@ -412,6 +431,9 @@ function getViewFromLog(item) {
 }
 
 function getActionFromLog(item) {
+  // Extract action from direct properties (new enhanced logging format)
+  if (item.action) return item.action
+
   // Extract action from meta data
   if (item.meta && item.meta.action) {
     return item.meta.action
@@ -436,13 +458,21 @@ function getActionColor(item) {
   const colorMap = {
     'LOGIN': 'success',
     'REGISTER': 'info',
+    'LOGOUT': 'warning',
     'CREATE_TASK': 'primary',
     'UPDATE_TASK': 'orange',
     'DELETE_TASK': 'error',
+    'TOGGLE_TASK': 'purple',
     'TOGGLE_TASK_STATUS': 'purple',
-    'UPDATE_EXPIRED_TASKS': 'warning',
+    'UPDATE_OVERDUE_TASKS': 'warning',
+    'VIEW_TASKS': 'blue',
+    'FILTER_TASKS': 'cyan',
+    'VIEW_TASK_STATS': 'teal',
+    'VIEW_TASK': 'blue-grey',
     'VIEW_LOGS': 'indigo',
-    'DELETE_ALL_LOGS': 'red'
+    'DELETE_ALL_LOGS': 'red',
+    'PROFILE_UPDATE': 'amber',
+    'PASSWORD_CHANGE': 'deep-orange'
   }
   return colorMap[action] || 'grey'
 }

@@ -19,13 +19,58 @@ const { body, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        // Format errors for better user experience
+        const formattedErrors = errors.array().map(error => {
+            // Extract field name from path (e.g., 'title' from 'body.title')
+            const fieldName = error.path || error.param || 'field';
+
+            // Create user-friendly field display name
+            const fieldDisplayName = getFieldDisplayName(fieldName, req);
+
+            return {
+                field: fieldName,
+                message: error.msg,
+                value: error.value,
+                location: error.location,
+                // Add a user-friendly field name for frontend display
+                fieldDisplayName: fieldDisplayName
+            };
+        });
+
+        // Create a more descriptive main message
+        const mainMessage = formattedErrors.length === 1
+            ? req.t('validation.singleFieldError') || 'Please correct the highlighted field'
+            : req.t('validation.multipleFieldsError', { count: formattedErrors.length }) || `Please correct the ${formattedErrors.length} highlighted fields`;
+
         return res.status(400).json({
             success: false,
-            message: req.t('validation.validationFailed') || 'Validation failed',
-            errors: errors.array()
+            message: mainMessage,
+            errors: formattedErrors,
+            validationFailed: true
         });
     }
     next();
+};
+
+/**
+ * Get user-friendly display name for form fields
+ * @param {string} fieldName - The technical field name
+ * @param {Object} req - Express request object for translations
+ * @returns {string} User-friendly field name
+ */
+const getFieldDisplayName = (fieldName, req) => {
+    const fieldNames = {
+        'email': req.t('auth.email') || 'Email',
+        'password': req.t('auth.password') || 'Password',
+        'name': req.t('auth.name') || 'Name',
+        'title': req.t('tasks.title') || 'Title',
+        'description': req.t('tasks.description') || 'Description',
+        'priority': req.t('common.priority') || 'Priority',
+        'dueDate': req.t('tasks.dueDate') || 'Due Date',
+        'status': req.t('common.status') || 'Status'
+    };
+
+    return fieldNames[fieldName] || fieldName;
 };
 
 /**
@@ -37,23 +82,23 @@ const handleValidationErrors = (req, res, next) => {
 const validateRegistration = [
     body('email')
         .isEmail()
-        .withMessage('Please provide a valid email address')
+        .withMessage((value, { req }) => req.t('validation.email.invalid') || 'Please enter a valid email address (e.g., user@example.com)')
         .normalizeEmail()
         .toLowerCase(),
-    
+
     body('password')
         .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters long')
+        .withMessage((value, { req }) => req.t('validation.password.minLength') || 'Password must be at least 6 characters long')
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-        .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
-    
+        .withMessage((value, { req }) => req.t('validation.password.complexity') || 'Password must include: uppercase letter, lowercase letter, and number'),
+
     body('name')
         .trim()
         .isLength({ min: 2, max: 50 })
-        .withMessage('Name must be between 2 and 50 characters')
+        .withMessage((value, { req }) => req.t('validation.name.length') || 'Name must be between 2 and 50 characters')
         .matches(/^[a-zA-Z\s\-'\.]+$/)
-        .withMessage('Name can only contain letters, spaces, hyphens, apostrophes, and periods'),
-    
+        .withMessage((value, { req }) => req.t('validation.name.format') || 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+
     handleValidationErrors
 ];
 
@@ -66,14 +111,14 @@ const validateRegistration = [
 const validateLogin = [
     body('email')
         .isEmail()
-        .withMessage('Please provide a valid email address')
+        .withMessage((value, { req }) => req.t('validation.email.invalid') || 'Please enter a valid email address')
         .normalizeEmail()
         .toLowerCase(),
-    
+
     body('password')
         .notEmpty()
-        .withMessage('Password is required'),
-    
+        .withMessage((value, { req }) => req.t('validation.password.required') || 'Please enter your password'),
+
     handleValidationErrors
 ];
 
@@ -87,30 +132,35 @@ const validateTaskCreation = [
     body('title')
         .trim()
         .isLength({ min: 1, max: 100 })
-        .withMessage('Task title must be between 1 and 100 characters'),
-    
+        .withMessage((value, { req }) => req.t('validation.task.title.length') || 'Please enter a task title (1-100 characters)'),
+
     body('description')
         .optional()
         .trim()
         .isLength({ max: 500 })
-        .withMessage('Task description cannot exceed 500 characters'),
-    
+        .withMessage((value, { req }) => req.t('validation.task.description.maxLength') || 'Description is too long. Please use 500 characters or less'),
+
     body('priority')
         .optional()
         .isIn(['low', 'medium', 'high'])
-        .withMessage('Priority must be low, medium, or high'),
-    
+        .withMessage((value, { req }) => req.t('validation.task.priority.invalid') || 'Please select Low, Medium, or High priority'),
+
     body('dueDate')
         .optional()
-        .isISO8601()
-        .withMessage('Due date must be a valid date')
-        .custom((value) => {
-            if (value && new Date(value) <= new Date()) {
-                throw new Error('Due date must be in the future');
+        .custom((value, { req }) => {
+            if (value === null || value === '' || value === undefined) {
+                return true; // Allow null/empty to clear due date
             }
+
+            // Check if it's a valid date
+            const parsedDate = Date.parse(value);
+            if (!parsedDate || isNaN(parsedDate)) {
+                throw new Error(req.t('validation.task.dueDate.invalid') || 'Please enter a valid date');
+            }
+
             return true;
         }),
-    
+
     handleValidationErrors
 ];
 
@@ -125,39 +175,40 @@ const validateTaskUpdate = [
         .optional()
         .trim()
         .isLength({ min: 1, max: 100 })
-        .withMessage('Task title must be between 1 and 100 characters'),
-    
+        .withMessage((value, { req }) => req.t('validation.task.title.length') || 'Please enter a task title (1-100 characters)'),
+
     body('description')
         .optional()
         .trim()
         .isLength({ max: 500 })
-        .withMessage('Task description cannot exceed 500 characters'),
-    
+        .withMessage((value, { req }) => req.t('validation.task.description.maxLength') || 'Description is too long. Please use 500 characters or less'),
+
     body('status')
         .optional()
-        .isIn(['pending', 'completed'])
-        .withMessage('Status must be pending or completed'),
-    
+        .isIn(['active', 'completed', 'overdue'])
+        .withMessage((value, { req }) => req.t('validation.task.status.invalid') || 'Please select Active, Completed, or Overdue status'),
+
     body('priority')
         .optional()
         .isIn(['low', 'medium', 'high'])
-        .withMessage('Priority must be low, medium, or high'),
-    
+        .withMessage((value, { req }) => req.t('validation.task.priority.invalid') || 'Please select Low, Medium, or High priority'),
+
     body('dueDate')
         .optional()
-        .custom((value) => {
-            if (value === null || value === '') {
+        .custom((value, { req }) => {
+            if (value === null || value === '' || value === undefined) {
                 return true; // Allow null/empty to clear due date
             }
-            if (!Date.parse(value)) {
-                throw new Error('Due date must be a valid date');
+
+            // Check if it's a valid date
+            const parsedDate = Date.parse(value);
+            if (!parsedDate || isNaN(parsedDate)) {
+                throw new Error(req.t('validation.task.dueDate.invalid') || 'Please enter a valid date');
             }
-            if (new Date(value) <= new Date()) {
-                throw new Error('Due date must be in the future');
-            }
+
             return true;
         }),
-    
+
     handleValidationErrors
 ];
 
@@ -170,22 +221,22 @@ const validateTaskUpdate = [
 const validatePasswordChange = [
     body('currentPassword')
         .notEmpty()
-        .withMessage('Current password is required'),
-    
+        .withMessage((value, { req }) => req.t('validation.password.currentRequired') || 'Please enter your current password'),
+
     body('newPassword')
         .isLength({ min: 6 })
-        .withMessage('New password must be at least 6 characters long')
+        .withMessage((value, { req }) => req.t('validation.password.minLength') || 'New password must be at least 6 characters long')
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-        .withMessage('New password must contain at least one lowercase letter, one uppercase letter, and one number'),
-    
+        .withMessage((value, { req }) => req.t('validation.password.complexity') || 'New password must include: uppercase letter, lowercase letter, and number'),
+
     body('confirmPassword')
         .custom((value, { req }) => {
             if (value !== req.body.newPassword) {
-                throw new Error('Password confirmation does not match new password');
+                throw new Error(req.t('validation.password.confirmMismatch') || 'Password confirmation does not match');
             }
             return true;
         }),
-    
+
     handleValidationErrors
 ];
 

@@ -1,0 +1,42 @@
+{
+  "validationFailed": "Please check the form for errors",
+  "singleFieldError": "Please correct the highlighted field",
+  "multipleFieldsError": "Please correct the {{count}} highlighted fields",
+  "required": "This field is required",
+  "email": {
+    "invalid": "Please enter a valid email address (e.g., user@example.com)",
+    "required": "Email address is required"
+  },
+  "password": {
+    "required": "Please enter your password",
+    "currentRequired": "Please enter your current password",
+    "minLength": "Password must be at least 6 characters long",
+    "complexity": "Password must include: uppercase letter, lowercase letter, and number",
+    "confirmMismatch": "Password confirmation does not match"
+  },
+  "name": {
+    "required": "Name is required",
+    "length": "Name must be between 2 and 50 characters",
+    "format": "Name can only contain letters, spaces, hyphens, and apostrophes"
+  },
+  "task": {
+    "title": {
+      "required": "Please enter a task title",
+      "length": "Please enter a task title (1-100 characters)"
+    },
+    "description": {
+      "maxLength": "Description is too long. Please use 500 characters or less"
+    },
+    "status": {
+      "invalid": "Please select Active, Completed, or Overdue status"
+    },
+    "priority": {
+      "invalid": "Please select Low, Medium, or High priority"
+    },
+    "dueDate": {
+      "invalid": "Please enter a valid date",
+      "past": "Due date cannot be in the past",
+      "future": "Due date must be today or in the future"
+    }
+  }
+}

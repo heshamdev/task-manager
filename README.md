@@ -276,6 +276,267 @@ The application uses industry-standard Arabic fonts commonly employed by major w
 - **Component-Specific**: Tailored typography for different UI components
 - **Performance**: Optimized font loading with `font-display: swap`
 
+## Task Filtering & Sorting System
+
+### Overview
+The application features a comprehensive filtering and sorting system that allows users to efficiently manage and view their tasks through multiple criteria. The filtering system operates both on the frontend and backend for optimal performance.
+
+### Available Filters
+
+#### 1. **Search Filter**
+- **Function**: Full-text search across task titles and descriptions
+- **Type**: Case-insensitive regex search
+- **Backend Implementation**: Uses MongoDB `$regex` with `$options: 'i'`
+- **Usage**: Type keywords in the search box to find matching tasks
+- **Example**: Searching "meeting" will find tasks with "Team Meeting" or "meeting preparation"
+
+#### 2. **Status Filter**
+- **Available Options**:
+  - `All` - Shows all tasks regardless of status
+  - `Active` - Shows tasks that are currently in progress
+  - `Completed` - Shows finished tasks
+  - `Overdue` - Shows tasks past their due date that are not completed
+- **Backend Logic**: Direct field matching with validation
+- **Auto-updates**: Overdue status automatically calculated based on current date
+
+#### 3. **Priority Filter**
+- **Available Options**:
+  - `All` - Shows tasks of all priority levels
+  - `High` - Critical/urgent tasks (red indicator)
+  - `Medium` - Standard priority tasks (orange indicator)
+  - `Low` - Non-urgent tasks (green indicator)
+- **Visual Indicators**: Color-coded chips for easy identification
+- **Default Value**: New tasks default to "Medium" priority
+
+#### 4. **Date-Based Filters**
+- **Today**: Tasks due within the current 24-hour period
+- **Tomorrow**: Tasks due the next day
+- **This Week**: Tasks due within the current calendar week
+- **Overdue**: Tasks past due date and not completed
+- **Upcoming**: Tasks with future due dates
+- **No Due Date**: Tasks without assigned due dates
+
+**Technical Implementation:**
+```javascript
+// Date range calculation examples
+const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+```
+
+### Sorting System
+
+#### 1. **Sort Fields**
+- **Created Date** (`createdAt`): When the task was first created
+- **Updated Date** (`updatedAt`): When the task was last modified
+- **Due Date** (`dueDate`): The assigned deadline for the task
+- **Priority** (`priority`): Importance level of the task
+
+#### 2. **Sort Orders**
+- **Ascending** (`asc`): Lowest to highest (A-Z, earliest to latest)
+- **Descending** (`desc`): Highest to lowest (Z-A, latest to earliest)
+
+#### 3. **Smart Priority Sorting**
+When sorting by priority, the system uses a custom ranking:
+- **High Priority**: Value 3 (appears first in descending order)
+- **Medium Priority**: Value 2
+- **Low Priority**: Value 1 (appears last in descending order)
+
+#### 4. **Secondary Sorting**
+- All sorts include a secondary sort by `createdAt` (descending) for consistent ordering
+- This ensures tasks with identical primary sort values maintain predictable order
+
+### Advanced Filtering Features
+
+#### 1. **Combined Filters**
+- Multiple filters can be applied simultaneously
+- All filters use AND logic (task must match all active filters)
+- Example: Status="Active" + Priority="High" + Date="Today" shows only active high-priority tasks due today
+
+#### 2. **Real-time Updates**
+- Filters apply immediately upon selection
+- No "Apply" button needed - results update as you type/select
+- Debounced search to prevent excessive API calls
+
+#### 3. **Filter Persistence**
+- Filter state maintained during the session
+- "Clear Filters" button resets all filters to default state
+- Default sort: Created Date (descending)
+
+#### 4. **Pagination Support**
+- Filtered results include pagination
+- Page size: 5 tasks per page (configurable)
+- Navigation: First, Previous, Next, Last page controls
+
+### Frontend Implementation
+
+#### Smart Sorting Logic
+```javascript
+// Urgency-based priority sorting
+const urgencyOrder = {
+  overdue: 3,   // Highest urgency
+  today: 2,     // Medium urgency
+  future: 1,    // Lower urgency
+  none: 0       // No due date
+}
+```
+
+#### Filter State Management
+```javascript
+const filters = reactive({
+  search: '',
+  status: '',
+  priority: '',
+  dateFilter: '',
+  sortBy: 'createdAt',
+  sortOrder: 'desc'
+})
+```
+
+### Backend API Endpoints
+
+#### Filter Endpoint
+- **URL**: `GET /api/tasks/filter`
+- **Query Parameters**:
+  - `status` - Filter by task status
+  - `priority` - Filter by priority level
+  - `dateFilter` - Date-based filtering
+  - `search` - Text search in title/description
+  - `sortBy` - Field to sort by
+  - `sortOrder` - Sort direction (asc/desc)
+  - `page` - Page number for pagination
+  - `limit` - Results per page
+
+#### Response Format
+```javascript
+{
+  success: true,
+  data: {
+    tasks: [...],           // Filtered task array
+    pagination: {
+      total: 25,            // Total matching tasks
+      page: 1,              // Current page
+      totalPages: 5,        // Total pages available
+      hasNext: true,        // More pages available
+      hasPrev: false        // Previous pages available
+    },
+    appliedFilters: {
+      status: "active",
+      priority: "high",
+      sortBy: "dueDate",
+      sortOrder: "asc"
+    }
+  }
+}
+```
+
+### Performance Optimizations
+
+#### 1. **Database Indexing**
+- Compound indexes on frequently filtered fields
+- Index on `userId` + `status` + `priority` for fast filtering
+- Index on `userId` + `dueDate` for date-based queries
+
+#### 2. **Query Optimization**
+- Efficient MongoDB aggregation pipelines
+- Minimal data transfer (only required fields)
+- Server-side pagination to limit result size
+
+#### 3. **Caching Strategy**
+- Filter state cached in component reactive data
+- Debounced search input (300ms delay)
+- Optimistic UI updates where appropriate
+
+### User Experience Features
+
+#### 1. **Visual Feedback**
+- Loading states during filter application
+- Clear indicators for active filters
+- Color-coded priority and status chips
+- Empty state messaging for no results
+
+#### 2. **Accessibility**
+- Screen reader compatible filter controls
+- Keyboard navigation support
+- Clear labeling of all filter options
+- Focus management during filter changes
+
+#### 3. **Responsive Design**
+- Mobile-optimized filter interface
+- Collapsible filter panel on small screens
+- Touch-friendly filter controls
+- Adaptive layout for different screen sizes
+
+### Usage Examples
+
+#### Example 1: Find High-Priority Tasks Due Today
+1. Set Status filter to "Active"
+2. Set Priority filter to "High"
+3. Set Date filter to "Today"
+4. Sort by "Due Date" ascending
+
+#### Example 2: Review Recently Updated Tasks
+1. Clear all filters
+2. Sort by "Updated Date" descending
+3. Optionally add search term for specific projects
+
+#### Example 3: Focus on Overdue Work
+1. Set Status filter to "Active"
+2. Set Date filter to "Overdue"
+3. Sort by "Priority" descending to see most critical items first
+
+## Progressive Web App (PWA) Support
+
+### Overview
+The application is fully configured as a Progressive Web App, providing native app-like experience across all platforms.
+
+### PWA Features
+- **Installable**: Can be installed on desktop and mobile devices
+- **Offline Capable**: Service worker enables offline functionality
+- **App-like Experience**: Runs in standalone mode without browser UI
+- **Responsive Design**: Optimized for all screen sizes and orientations
+- **Fast Loading**: Service worker caching for improved performance
+
+### Installation Instructions
+
+#### Desktop (Chrome, Edge, Firefox)
+1. Visit the application in your browser
+2. Look for the **Install** button (⬇️) in the address bar
+3. Click "Install" and confirm
+4. App will be added to your Applications folder and Start Menu
+
+#### Mobile (iOS Safari, Android Chrome)
+1. Open the app in your mobile browser
+2. Tap the **Share** button (iOS) or **Menu** (Android)
+3. Select "Add to Home Screen"
+4. Confirm installation
+
+#### Features After Installation
+- **Standalone App**: Launches without browser interface
+- **Home Screen Icon**: Professional 3DDX branding
+- **App Shortcuts**: Quick access to Tasks section
+- **Offline Access**: Continue working without internet connection
+- **Native Feel**: Smooth animations and responsive interactions
+
+### PWA Configuration
+- **Manifest**: `/public/manifest.json` with complete app metadata
+- **Service Worker**: `/public/sw.js` for caching and offline support
+- **Icons**: High-quality icons (192x192, 512x512) for all platforms
+- **Theme Colors**: Consistent branding with #1976d2 theme color
+- **Display Mode**: Standalone for native app experience
+
+### Browser Support
+- ✅ Chrome/Edge (Desktop & Mobile)
+- ✅ Safari (iOS 11.3+)
+- ✅ Firefox (Desktop & Mobile)
+- ✅ Samsung Internet
+- ✅ Opera
+
+### Development Features
+- **Manifest Validation**: Proper JSON structure with all required fields
+- **Service Worker Registration**: Automatic registration on app load
+- **Icon Optimization**: Multiple sizes for different contexts
+- **Scope Definition**: Proper PWA scope and start URL configuration
+
 ## Limitations / Known Issues
 - No password reset flow
 - Admin log retention policy not implemented (logs accumulate indefinitely)

@@ -154,9 +154,23 @@ async function onSubmit(values, { setErrors }) {
     console.error('Login error:', e)
     
     // Check if it's a validation error (field-specific errors)
-    if (e?.response?.status === 400 && e?.response?.data?.errors) {
-      // Validation errors - set field-specific errors
-      setErrors(e.response.data.errors)
+    if (e?.response?.status === 400 && e?.response?.data?.validationFailed && e?.response?.data?.errors) {
+      // Handle new validation error format
+      const serverErrors = {}
+      e.response.data.errors.forEach(err => {
+        const fieldName = err.field || err.path
+        if (fieldName) {
+          serverErrors[fieldName] = err.message
+        }
+      })
+
+      if (Object.keys(serverErrors).length > 0) {
+        setErrors(serverErrors)
+        // Show the main validation message
+        error.value = e.response?.data?.message || $t('validation.validationFailed')
+      } else {
+        error.value = e.response?.data?.message || $t('validation.validationFailed')
+      }
     } else {
       // Authentication or server errors - show general error message
       const statusCode = e?.response?.status
