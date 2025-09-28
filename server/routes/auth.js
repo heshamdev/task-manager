@@ -10,6 +10,7 @@ const User = require('../models/User');
 const { generateToken, authenticateToken } = require('../middleware/auth');
 const { validateRegistration, validateLogin, validatePasswordChange } = require('../middleware/validation');
 const logger = require('../utils/logger');
+const { logRequestAction } = require('../middleware/logging');
 
 const router = express.Router();
 
@@ -48,12 +49,14 @@ router.post('/register', validateRegistration, async (req, res) => {
         // Generate JWT token
         const token = generateToken(user._id, user.isAdmin);
 
-        // Log user registration
+        // Log user registration with enhanced logging
         logger.logUserAction(
             user._id.toString(),
             'REGISTER',
             { email: user.email, name: user.name },
-            req.ip
+            req.ip,
+            user.email,
+            req.currentView || 'register'
         );
 
         res.status(201).json({
@@ -125,12 +128,14 @@ router.post('/login', validateLogin, async (req, res) => {
         // Generate JWT token
         const token = generateToken(user._id, user.isAdmin);
 
-        // Log user login
+        // Log user login with enhanced logging
         logger.logUserAction(
             user._id.toString(),
             'LOGIN',
             { email: user.email },
-            req.ip
+            req.ip,
+            user.email,
+            req.currentView || 'login'
         );
 
         res.json({

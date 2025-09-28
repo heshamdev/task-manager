@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const { logRequestAction } = require('../middleware/logging');
 
 const router = express.Router();
 
@@ -35,8 +36,8 @@ router.get('/logs', async (req, res) => {
     const allLines = content.trim().split(/\r?\n/);
     const lines = allLines.slice(-limit);
 
-    // Log admin access
-    logger.logUserAction(req.userId, 'VIEW_LOGS', { linesReturned: lines.length }, req.ip);
+    // Log admin access with enhanced logging
+    await logRequestAction(req, 'VIEW_LOGS', { linesReturned: lines.length });
 
     return res.json({ success: true, logs: lines });
   } catch (error) {
@@ -62,8 +63,8 @@ router.delete('/logs', async (req, res) => {
       fs.writeFileSync(logFilePath, '');
     }
 
-    // Log admin action
-    logger.logUserAction(req.userId, 'DELETE_ALL_LOGS', {}, req.ip);
+    // Log admin action with enhanced logging
+    await logRequestAction(req, 'DELETE_ALL_LOGS', {});
 
     return res.json({
       success: true,

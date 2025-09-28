@@ -28,8 +28,8 @@ const taskSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: {
-            values: ['pending', 'completed'],
-            message: 'Status must be either pending or completed'
+            values: ['pending', 'completed', 'expired'],
+            message: 'Status must be pending, completed, or expired'
         },
         default: 'pending'
     },
@@ -105,12 +105,23 @@ taskSchema.methods.markCompleted = async function() {
 /**
  * Instance method to mark task as pending
  * Updates task status to pending and clears completion timestamp
- * 
+ *
  * @returns {Promise<Object>} Updated task document
  */
 taskSchema.methods.markPending = async function() {
     this.status = 'pending';
     this.completedAt = null;
+    return await this.save();
+};
+
+/**
+ * Instance method to mark task as expired
+ * Updates task status to expired (for overdue tasks)
+ *
+ * @returns {Promise<Object>} Updated task document
+ */
+taskSchema.methods.markExpired = async function() {
+    this.status = 'expired';
     return await this.save();
 };
 
@@ -141,7 +152,7 @@ taskSchema.statics.findByUserId = function(userId, filters = {}) {
 /**
  * Static method to get task statistics for a user
  * Returns count of tasks by status for a specific user
- * 
+ *
  * @param {string} userId - User ID to get statistics for
  * @returns {Promise<Object>} Object with task counts by status
  */
@@ -150,7 +161,7 @@ taskSchema.statics.getTaskStats = async function(userId) {
     try {
         objectId = new mongoose.Types.ObjectId(userId)
     } catch (e) {
-        return { total: 0, pending: 0, completed: 0 }
+        return { total: 0, pending: 0, completed: 0, expired: 0 }
     }
     const stats = await this.aggregate([
         { $match: { userId: objectId } },
@@ -161,20 +172,53 @@ taskSchema.statics.getTaskStats = async function(userId) {
             }
         }
     ]);
-    
+
     // Format the results
     const result = {
         total: 0,
         pending: 0,
-        completed: 0
+        completed: 0,
+        expired: 0
     };
-    
+
     stats.forEach(stat => {
         result[stat._id] = stat.count;
         result.total += stat.count;
     });
-    
+
     return result;
+};
+
+/**
+ * Static method to find and update expired tasks
+ * Finds tasks that are overdue and marks them as expired
+ *
+ * @param {string} userId - User ID to update expired tasks for (optional)
+ * @returns {Promise<Object>} Object with count of updated tasks and updated task IDs
+ */
+taskSchema.statics.updateExpiredTasks = async function(userId = null) {
+    const now = new Date();
+    const query = {
+        status: 'pending',
+        dueDate: { $ne: null, $lt: now }
+    };
+
+    // If userId is provided, filter by user
+    if (userId) {
+        query.userId = new mongoose.Types.ObjectId(userId);
+    }
+
+    // Find expired tasks
+    const expiredTasks = await this.find(query);
+
+    // Update tasks to expired status
+    const updateResult = await this.updateMany(query, { status: 'expired' });
+
+    return {
+        modifiedCount: updateResult.modifiedCount,
+        expiredTaskIds: expiredTasks.map(task => task._id.toString()),
+        expiredTasks: expiredTasks
+    };
 };
 
 /**

@@ -10,6 +10,7 @@ const Task = require('../models/Task');
 const { authenticateToken } = require('../middleware/auth');
 const { validateTaskCreation, validateTaskUpdate } = require('../middleware/validation');
 const logger = require('../utils/logger');
+const { logRequestAction } = require('../middleware/logging');
 
 const router = express.Router();
 
@@ -34,7 +35,7 @@ router.get('/', async (req, res) => {
 
         // Build filter object
         const query = { userId };
-        if (status && ['pending', 'completed'].includes(status)) {
+        if (status && ['pending', 'completed', 'expired'].includes(status)) {
             query.status = status;
         }
         if (priority && ['low', 'medium', 'high'].includes(priority)) {
@@ -82,9 +83,45 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * Update expired tasks for authenticated user
+ * Finds tasks that are overdue and marks them as expired
+ *
+ * @route POST /api/tasks/update-expired
+ * @returns {Object} Result of expired tasks update operation
+ */
+router.post('/update-expired', async (req, res) => {
+    try {
+        const userId = req.userId;
+        const result = await Task.updateExpiredTasks(userId);
+
+        // Log the action with enhanced logging
+        await logRequestAction(req, 'UPDATE_EXPIRED_TASKS', {
+            modifiedCount: result.modifiedCount,
+            expiredTaskIds: result.expiredTaskIds
+        });
+
+        res.json({
+            success: true,
+            message: req.t('tasks.expiredTasksUpdated') || 'Expired tasks updated successfully',
+            data: {
+                modifiedCount: result.modifiedCount,
+                expiredTaskIds: result.expiredTaskIds
+            }
+        });
+
+    } catch (error) {
+        logger.error('Update expired tasks error:', error);
+        res.status(500).json({
+            success: false,
+            message: (process.env.NODE_ENV === 'development' && error && error.message) ? error.message : (req.t('errors.serverError') || 'Internal server error')
+        });
+    }
+});
+
+/**
  * Get task statistics for authenticated user
  * Returns count of tasks by status and other metrics
- * 
+ *
  * @route GET /api/tasks/stats
  * @returns {Object} Task statistics including counts by status
  */
@@ -177,13 +214,11 @@ router.post('/', validateTaskCreation, async (req, res) => {
 
         await task.save();
 
-        // Log task creation
-        logger.logUserAction(
-            userId,
-            'CREATE_TASK',
-            { taskId: task._id.toString(), title: task.title },
-            req.ip
-        );
+        // Log task creation with enhanced logging
+        await logRequestAction(req, 'CREATE_TASK', {
+            taskId: task._id.toString(),
+            title: task.title
+        });
 
         res.status(201).json({
             success: true,
@@ -242,17 +277,12 @@ router.put('/:id', validateTaskUpdate, async (req, res) => {
             });
         }
 
-        // Log task update
-        logger.logUserAction(
-            userId,
-            'UPDATE_TASK',
-            { 
-                taskId: task._id.toString(), 
-                title: task.title,
-                updatedFields: Object.keys(updateData)
-            },
-            req.ip
-        );
+        // Log task update with enhanced logging
+        await logRequestAction(req, 'UPDATE_TASK', {
+            taskId: task._id.toString(),
+            title: task.title,
+            updatedFields: Object.keys(updateData)
+        });
 
         res.json({
             success: true,
@@ -312,17 +342,12 @@ router.patch('/:id/toggle', async (req, res) => {
             ? await task.markPending()
             : await task.markCompleted();
 
-        // Log task status toggle
-        logger.logUserAction(
-            userId,
-            'TOGGLE_TASK_STATUS',
-            { 
-                taskId: task._id.toString(), 
-                title: task.title,
-                newStatus: updatedTask.status
-            },
-            req.ip
-        );
+        // Log task status toggle with enhanced logging
+        await logRequestAction(req, 'TOGGLE_TASK_STATUS', {
+            taskId: task._id.toString(),
+            title: task.title,
+            newStatus: updatedTask.status
+        });
 
         res.json({
             success: true,
@@ -369,13 +394,11 @@ router.delete('/:id', async (req, res) => {
             });
         }
 
-        // Log task deletion
-        logger.logUserAction(
-            userId,
-            'DELETE_TASK',
-            { taskId: id, title: task.title },
-            req.ip
-        );
+        // Log task deletion with enhanced logging
+        await logRequestAction(req, 'DELETE_TASK', {
+            taskId: id,
+            title: task.title
+        });
 
         res.json({
             success: true,

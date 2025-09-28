@@ -112,16 +112,20 @@ const createLogger = () => {
 /**
  * Log user action for audit purposes
  * Logs user actions with structured data for audit trail
- * 
+ *
  * @param {string} userId - User ID performing the action
  * @param {string} action - Action being performed
  * @param {Object} details - Additional details about the action
  * @param {string} ipAddress - IP address of the user
+ * @param {string} userEmail - Email of the user performing the action
+ * @param {string} view - View/page name where action was performed
  */
-const logUserAction = (userId, action, details = {}, ipAddress = 'unknown') => {
+const logUserAction = (userId, action, details = {}, ipAddress = 'unknown', userEmail = 'unknown', view = 'unknown') => {
     logger.info('User Action', {
         userId,
+        userEmail,
         action,
+        view,
         details,
         ipAddress,
         timestamp: new Date().toISOString(),
@@ -129,9 +133,34 @@ const logUserAction = (userId, action, details = {}, ipAddress = 'unknown') => {
     });
 };
 
+/**
+ * Enhanced log user action with automatic user lookup
+ * Automatically fetches user email from database and logs action
+ *
+ * @param {string} userId - User ID performing the action
+ * @param {string} action - Action being performed
+ * @param {Object} details - Additional details about the action
+ * @param {string} ipAddress - IP address of the user
+ * @param {string} view - View/page name where action was performed
+ */
+const logUserActionWithEmail = async (userId, action, details = {}, ipAddress = 'unknown', view = 'unknown') => {
+    try {
+        const User = require('../models/User');
+        const user = await User.findById(userId).select('email');
+        const userEmail = user ? user.email : 'unknown';
+
+        logUserAction(userId, action, details, ipAddress, userEmail, view);
+    } catch (error) {
+        // Fallback to basic logging if user lookup fails
+        logUserAction(userId, action, details, ipAddress, 'lookup_failed', view);
+        logger.error('Failed to lookup user email for logging', { userId, error: error.message });
+    }
+};
+
 // Create logger instance
 const logger = createLogger();
 
 // Export logger and utility functions
 logger.logUserAction = logUserAction;
+logger.logUserActionWithEmail = logUserActionWithEmail;
 module.exports = logger;

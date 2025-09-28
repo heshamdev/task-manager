@@ -15,6 +15,8 @@ require('dotenv').config();
 const connectDB = require('./config/database');
 const logger = require('./utils/logger');
 const i18n = require('./config/i18n');
+const scheduler = require('./utils/scheduler');
+const { extractViewContext } = require('./middleware/logging');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -65,6 +67,9 @@ function createApp() {
         }
         next();
     });
+
+    // Extract view context for logging
+    app.use(extractViewContext);
 
     // Logging middleware
     app.use((req, res, next) => {
@@ -123,7 +128,10 @@ async function startServer(port = process.env.PORT || 3000) {
     try {
         // Connect to database
         await connectDB();
-        
+
+        // Start the scheduler for expired tasks
+        scheduler.startScheduler(60); // Run every 60 minutes
+
         // Create and start the app
         const app = createApp();
         

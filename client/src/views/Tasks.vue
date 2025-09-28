@@ -416,24 +416,17 @@ function isTaskExpired(task) {
   return task.status === 'pending' && getDueDateUrgency(task.dueDate) === 'overdue'
 }
 
-// Function to automatically update expired tasks
+// Function to automatically update expired tasks using backend endpoint
 async function updateExpiredTasks() {
-  const expiredTasks = tasks.value.filter(task => isTaskExpired(task))
+  try {
+    const response = await api.post('/api/tasks/update-expired')
 
-  for (const task of expiredTasks) {
-    try {
-      await api.put(`/api/tasks/${task._id}`, {
-        ...task,
-        status: 'expired'
-      })
-      task.status = 'expired'
-    } catch (error) {
-      console.error('Error updating expired task:', error)
+    if (response.data.success && response.data.data.modifiedCount > 0) {
+      console.log(`Updated ${response.data.data.modifiedCount} expired tasks`)
+      await fetchStats() // Refresh stats to reflect the changes
     }
-  }
-
-  if (expiredTasks.length > 0) {
-    await fetchStats()
+  } catch (error) {
+    console.error('Error updating expired tasks:', error)
   }
 }
 

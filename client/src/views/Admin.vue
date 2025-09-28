@@ -151,6 +151,28 @@
                   </span>
                 </template>
 
+                <template #item.view="{ item }">
+                  <v-chip
+                    :color="getViewColor(item)"
+                    variant="tonal"
+                    size="small"
+                    class="font-weight-medium"
+                  >
+                    {{ getViewFromLog(item) || 'unknown' }}
+                  </v-chip>
+                </template>
+
+                <template #item.action="{ item }">
+                  <v-chip
+                    :color="getActionColor(item)"
+                    variant="outlined"
+                    size="small"
+                    class="font-weight-medium"
+                  >
+                    {{ getActionFromLog(item) || 'N/A' }}
+                  </v-chip>
+                </template>
+
                 <template #item.message="{ item }">
                   <div class="message-cell">
                     {{ item.message }}
@@ -229,11 +251,13 @@ const logLevels = [
 const pageSizeOptions = [10, 25, 50, 100]
 
 const headers = [
-  { title: 'Timestamp', key: 'timestamp', width: '200px' },
-  { title: 'Level', key: 'level', width: '100px' },
-  { title: 'Email', key: 'email', width: '200px' },
+  { title: 'Timestamp', key: 'timestamp', width: '180px' },
+  { title: 'Level', key: 'level', width: '80px' },
+  { title: 'Email', key: 'email', width: '180px' },
+  { title: 'View', key: 'view', width: '120px' },
+  { title: 'Action', key: 'action', width: '150px' },
   { title: 'Message', key: 'message', sortable: false },
-  { title: 'View', key: 'actions', width: '100px', sortable: false }
+  { title: 'Details', key: 'actions', width: '100px', sortable: false }
 ]
 
 // Computed properties
@@ -366,17 +390,61 @@ function toggleMeta(item) {
 }
 
 function getEmailFromLog(item) {
-  // Try to extract email from meta data
+  // Try to extract email from meta data (new enhanced logging format)
   if (item.meta) {
+    if (item.meta.userEmail) return item.meta.userEmail
     if (item.meta.email) return item.meta.email
     if (item.meta.user && item.meta.user.email) return item.meta.user.email
-    if (item.meta.userEmail) return item.meta.userEmail
   }
 
-  // Try to extract email from message using regex
+  // Try to extract email from message using regex (fallback)
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/
   const match = item.message?.match(emailRegex)
   return match ? match[0] : null
+}
+
+function getViewFromLog(item) {
+  // Extract view from meta data
+  if (item.meta && item.meta.view) {
+    return item.meta.view
+  }
+  return 'unknown'
+}
+
+function getActionFromLog(item) {
+  // Extract action from meta data
+  if (item.meta && item.meta.action) {
+    return item.meta.action
+  }
+  return 'N/A'
+}
+
+function getViewColor(item) {
+  const view = getViewFromLog(item)
+  const colorMap = {
+    'login': 'success',
+    'register': 'info',
+    'tasks': 'primary',
+    'admin': 'warning',
+    'unknown': 'grey'
+  }
+  return colorMap[view] || 'grey'
+}
+
+function getActionColor(item) {
+  const action = getActionFromLog(item)
+  const colorMap = {
+    'LOGIN': 'success',
+    'REGISTER': 'info',
+    'CREATE_TASK': 'primary',
+    'UPDATE_TASK': 'orange',
+    'DELETE_TASK': 'error',
+    'TOGGLE_TASK_STATUS': 'purple',
+    'UPDATE_EXPIRED_TASKS': 'warning',
+    'VIEW_LOGS': 'indigo',
+    'DELETE_ALL_LOGS': 'red'
+  }
+  return colorMap[action] || 'grey'
 }
 
 function viewLogDetails(item) {
