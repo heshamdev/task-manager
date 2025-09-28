@@ -2,6 +2,18 @@
 
 A simple task manager web application demonstrating clean structure, best practices, AI-assisted development, and deployment. Users can register/login, create/update/delete tasks, mark tasks as done/pending, and filter tasks. Admins can view user action logs.
 
+## 🚀 Live Demo
+
+- **Frontend (Netlify)**: [https://3ddxtaskmanager.netlify.app](https://3ddxtaskmanager.netlify.app)
+- **Backend API (Render)**: [Backend API Server](https://task-manager-backend-production.onrender.com)
+- **GitHub Repository**: [https://github.com/heshamdev/task-manager](https://github.com/heshamdev/task-manager)
+
+### Demo Credentials
+- **Regular User**: Create your own account via the registration form
+- **Admin Access**: Contact administrator for admin account privileges
+
+> **Note**: The backend may take 30-60 seconds to wake up on first request due to Render's free tier cold starts.
+
 ## Project Overview
 - Backend: Node.js (Express), MongoDB (Mongoose), JWT auth, Winston logging, i18n
 - Frontend: Vue 3 (Vite), Vue Router, Vue I18n, Axios
@@ -16,6 +28,32 @@ A simple task manager web application demonstrating clean structure, best practi
 - i18next (server) / vue-i18n (client)
 - Vue 3 + Vite
 - Professional Arabic Typography (Cairo, IBM Plex Sans Arabic, Tajawal fonts)
+
+## Code Quality & Documentation
+
+### Comprehensive Function Headers
+Every function throughout the codebase includes detailed JSDoc headers with:
+- **Purpose Description**: Clear explanation of what the function does
+- **Parameter Documentation**: Type and description of each parameter
+- **Return Value Documentation**: What the function returns
+- **Usage Examples**: Where applicable
+- **Error Handling**: Documented exceptions and error cases
+
+**Example from `server/middleware/auth.js`:**
+```javascript
+/**
+ * Middleware to verify JWT token and authenticate user
+ * Extracts token from Authorization header and verifies it
+ * Adds authenticated user to request object
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {void} Calls next() on success, sends error response on failure
+ */
+```
+
+**Coverage**: 100% of routes, middleware, utilities, and models include comprehensive headers.
 
 ## Structure
 ```
@@ -130,19 +168,82 @@ The project includes comprehensive test suites covering:
 - **Frontend**: Vitest + Vue Test Utils + Testing Library
 
 ## Deployment
-- Backend (Render):
-  - Create a new Web Service from the repo
-  - Build command: `npm install`
-  - Start command: `node server/server.js`
-  - Environment: add `.env` variables (MONGODB_URI, JWT_SECRET, CLIENT_URL to your frontend URL)
 
-- Frontend (Netlify/Vercel):
-  - Build command: `npm --prefix client run build`
-  - Publish directory: `client/dist`
-  - Set environment variables for API base if needed (we use relative `/api`, so configure a proxy or set full URL in `api.js` for production)
+### Current Production Deployment
 
-- Set `CLIENT_URL` to your deployed frontend URL on the backend for CORS
-- Consider serving the frontend statically from Netlify/Vercel and backend from Render with CORS enabled
+- **Frontend**: Deployed on Netlify at [https://3ddxtaskmanager.netlify.app](https://3ddxtaskmanager.netlify.app)
+- **Backend**: Deployed on Render at [task-manager-backend-production.onrender.com](https://task-manager-backend-production.onrender.com)
+- **Database**: MongoDB Atlas cloud database
+
+### Deployment Configuration Files
+
+The project includes production-ready configuration files:
+
+- `render.yaml` - Render deployment configuration for backend
+- `client/netlify.toml` - Netlify deployment configuration for frontend
+- Environment variables properly configured for production
+
+### Manual Deployment Instructions
+
+#### Backend Deployment (Render)
+1. Create a new Web Service from GitHub repository
+2. Use the included `render.yaml` configuration, or set manually:
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server/server.js`
+   - **Environment Variables**:
+     - `NODE_ENV=production`
+     - `MONGODB_URI=your-mongodb-connection-string`
+     - `JWT_SECRET=your-secure-jwt-secret`
+     - `CLIENT_URL=https://your-frontend-domain.netlify.app`
+     - `LOG_LEVEL=info`
+
+#### Frontend Deployment (Netlify)
+1. Connect your GitHub repository to Netlify
+2. Use the included `netlify.toml` configuration, or set manually:
+   - **Build Command**: `npm run build`
+   - **Publish Directory**: `dist`
+   - **Base Directory**: `client`
+   - **Node Version**: 18
+3. The build will automatically handle PWA manifest and service worker
+
+#### Database Setup (MongoDB Atlas)
+1. Create a MongoDB Atlas cluster
+2. Create a database user with read/write permissions
+3. Add your deployment server's IP to the whitelist (or use 0.0.0.0/0 for simplicity)
+4. Copy the connection string to your backend environment variables
+
+### Environment Variables Reference
+
+#### Backend (.env)
+```bash
+NODE_ENV=production
+PORT=10000
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmanager
+JWT_SECRET=your-super-secure-jwt-secret-key
+JWT_EXPIRES_IN=7d
+LOG_LEVEL=info
+CLIENT_URL=https://your-frontend-domain.netlify.app
+```
+
+#### Frontend (client/.env)
+```bash
+VITE_API_URL=https://your-backend-domain.onrender.com
+```
+
+### Security Considerations
+
+- JWT secrets are generated securely in production
+- CORS is configured to allow only specific origins
+- Rate limiting is enabled (100 requests per 15 minutes)
+- All sensitive data is stored in environment variables
+- MongoDB connection uses SSL/TLS encryption
+
+### Performance Optimizations
+
+- **Frontend**: Static assets cached for 1 year, PWA caching enabled
+- **Backend**: Helmet security headers, compression middleware
+- **Database**: Indexed queries for optimal performance
+- **CDN**: Netlify's global CDN for frontend asset delivery
 
 ## AI Usage Notes
 
