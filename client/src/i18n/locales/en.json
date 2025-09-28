@@ -1,0 +1,112 @@
+{
+  "common": {
+    "home": "Home",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "filter": "Filter",
+    "status": "Status",
+    "priority": "Priority",
+    "language": "Language",
+    "confirmDelete": "Are you sure you want to delete this task?"
+  },
+  "nav": {
+    "tasks": "Tasks",
+    "calendar": "Calendar"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "addTask": "Add Task",
+    "editTask": "Edit Task"
+  },
+  "theme": {
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "brand": {
+    "name": "Task Manager"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "loginSuccess": "Login successful",
+    "registrationSuccess": "Registration successful"
+  },
+  "tasks": {
+    "tasks": "Tasks",
+    "createTask": "Create Task",
+    "title": "Title",
+    "description": "Description (optional)",
+    "dueDate": "Due date",
+    "add": "Add",
+    "pending": "Pending",
+    "completed": "Completed",
+    "all": "All",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "total": "Total",
+    "yourTasks": "Your Tasks",
+    "noTasks": "No tasks yet",
+    "createFirstTask": "Create your first task to get started",
+    "statistics": "Statistics"
+  },
+  "errors": {
+    "required": "This field is required",
+    "server": "Server error",
+    "invalidCredentials": "Invalid email or password",
+    "emailExists": "Email address is already registered",
+    "tooManyAttempts": "Too many login attempts. Please try again later",
+    "tryAgainLater": "Server error. Please try again later",
+    "registrationAttempts": "Too many registration attempts. Please wait and try again",
+    "loadingTasks": "Failed to load tasks",
+    "checkConnection": "Please check your internet connection",
+    "serverError": "Internal server error"
+  },
+  "validation": {
+    "required": "The {field} field is required",
+    "email": "Please enter a valid email address",
+    "min": "The {field} must be at least {length} characters",
+    "max": "The {field} must not exceed {length} characters",
+    "confirmed": "The {field} confirmation does not match",
+    "minValue": "The {field} must be at least {min}",
+    "maxValue": "The {field} must not exceed {max}",
+    "futureDate": "The due date must be today or in the future",
+    "passwordComplexity": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+    "validationFailed": "Validation failed",
+    "invalidDate": "Please enter a valid date",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "title": "task title",
+      "description": "description",
+      "dueDate": "due date",
+      "confirmPassword": "password confirmation"
+    }
+  },
+  "pagination": {
+    "firstPage": "Go to first page",
+    "previousPage": "Go to previous page",
+    "nextPage": "Go to next page",
+    "lastPage": "Go to last page",
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "itemsPerPage": "Items per page",
+    "previous": "Previous",
+    "next": "Next",
+    "goToPage": "Go to page"
+  }
+}

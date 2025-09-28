@@ -1,0 +1,103 @@
+// Filter handlers with simplified loading
+async function handleStatusFilterChange() {
+  try {
+    const loader = presets.quick('Filtering by status...')
+    await fetchTasks(1, false)
+  } catch (e) {
+    console.error('Status filter error:', e)
+    presets.error('❌ Error filtering tasks\nPlease check your connection and try again.')
+  }
+}
+
+async function handlePriorityFilterChange() {
+  try {
+    const loader = presets.quick('Filtering by priority...')
+    await fetchTasks(1, false)
+  } catch (e) {
+    console.error('Priority filter error:', e)
+    presets.error('❌ Error filtering tasks\nPlease check your connection and try again.')
+  }
+}
+
+// Pagination handlers with loading
+async function goToPage(page) {
+  try {
+    const loader = presets.quick(`Loading page ${page}...`)
+    await fetchTasks(page, false)
+  } catch (e) {
+    console.error('Pagination error:', e)
+    presets.error('❌ Error loading tasks\nPlease check your connection and try again.')
+  }
+}
+
+async function toggle(t) {
+  try {
+    await withLoader(async () => {
+      const { data } = await api.patch(`/api/tasks/${t._id}/toggle`)
+      const idx = tasks.value.findIndex(x => x._id === t._id)
+      if (idx !== -1) tasks.value[idx] = data.data.task
+      await fetchStats()
+    }, {
+      message: `${t.status === 'completed' ? 'Marking as pending' : 'Completing task'}...`,
+      spinnerType: 'dots'
+    })
+    
+    presets.success(`✅ Task ${t.status === 'completed' ? 'marked as pending' : 'completed'}!`)
+  } catch (error) {
+    console.error('Toggle task error:', error)
+    presets.error('❌ Failed to update task status')
+  }
+}
+
+async function deleteTask(t) {
+  try {
+    await withLoader(async () => {
+      await api.delete(`/api/tasks/${t._id}`)
+      tasks.value = tasks.value.filter(x => x._id !== t._id)
+      await fetchStats()
+    }, {
+      message: 'Deleting task...',
+      spinnerType: 'ring'
+    })
+    
+    presets.success('✅ Task deleted successfully!')
+  } catch (error) {
+    console.error('Delete task error:', error)
+    presets.error('❌ Failed to delete task')
+  }
+}
+
+function openEdit(t) {
+  Object.assign(edit, { ...t, dueDate: t.dueDate ? new Date(t.dueDate).toISOString().slice(0,10) : '' })
+  editDialog.value.showModal()
+}
+
+function closeEdit() { 
+  editDialog.value.close() 
+}
+
+async function saveEdit() {
+  try {
+    await withLoader(async () => {
+      const payload = { 
+        title: edit.title, 
+        description: edit.description, 
+        priority: edit.priority, 
+        dueDate: edit.dueDate || null 
+      }
+      const { data } = await api.put(`/api/tasks/${edit._id}`, payload)
+      const idx = tasks.value.findIndex(x => x._id === edit._id)
+      if (idx !== -1) tasks.value[idx] = data.data.task
+      await fetchStats()
+    }, {
+      message: 'Saving changes...',
+      spinnerType: 'circular'
+    })
+    
+    presets.success('✅ Task updated successfully!')
+    closeEdit()
+  } catch (error) {
+    console.error('Edit task error:', error)
+    presets.error('❌ Failed to save changes')
+  }
+}
