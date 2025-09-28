@@ -11,7 +11,9 @@
 
 ### Demo Credentials
 - **Regular User**: Create your own account via the registration form
-- **Admin Access**: Contact administrator for admin account privileges
+- **Admin Access**:
+  - Email: `admin@admin.com`
+  - Password: `Admin123`
 
 > **Note**: The backend may take 30-60 seconds to wake up on first request due to Render's free tier cold starts.
 
