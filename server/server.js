@@ -29,7 +29,16 @@ const adminRoutes = require('./routes/admin');
  */
 function createApp() {
     const app = express();
-
+     // CORS configuration - Allow development and production ports
+    app.use(cors({
+      origin: [
+        process.env.CLIENT_URL,        // http://localhost:8080
+        'http://localhost:8080',       // Primary development frontend
+      ].filter(Boolean),
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      credentials: true,
+    }));
+    app.options('*', cors());
     // Security middleware
     app.use(helmet());
     
@@ -40,16 +49,6 @@ function createApp() {
         message: 'Too many requests from this IP, please try again later.'
     });
     app.use(limiter);
-
-    // CORS configuration - Allow development and production ports
-    app.use(cors({
-      origin: [
-        process.env.CLIENT_URL,        // http://localhost:8080
-        'http://localhost:8080',       // Primary development frontend
-      ].filter(Boolean),
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      credentials: true,
-    }));
 
     // Body parsing middleware
     app.use(express.json({ limit: '10mb' }));
