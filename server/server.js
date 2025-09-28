@@ -42,24 +42,15 @@ function createApp() {
     app.use(limiter);
 
     // CORS configuration - Allow development and production ports
-   const allowedOrigins = [
-  'https://3ddxtaskmanager.netlify.app', // Netlify
-  'http://localhost:8080',               // Vue CLI
-  'http://localhost:5173'                // Vite
-];
+    app.use(cors({
+      origin: [
+        process.env.CLIENT_URL,        // http://localhost:8080
+        'http://localhost:8080',       // Primary development frontend
+      ].filter(Boolean),
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      credentials: true,
+    }));
 
-app.options('*', cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('CORS not allowed'), false);
-    }
-  },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  credentials: true,
-}));
     // Body parsing middleware
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
@@ -91,9 +82,9 @@ app.options('*', cors({
     });
 
     // API routes
-    app.use('/api/auth', cors(), authRoutes);
-    app.use('/api/tasks', cors(), taskRoutes);
-    app.use('/api/admin', cors(), adminRoutes);
+    app.use('/api/auth', authRoutes);
+    app.use('/api/tasks', taskRoutes);
+    app.use('/api/admin', adminRoutes);
 
     // 404 handler
     app.use('*', (req, res) => {
