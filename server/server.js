@@ -48,9 +48,8 @@ function createApp() {
   'http://localhost:5173'                // Vite
 ];
 
-app.use(cors({
+app.options('*', cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like curl, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -61,9 +60,6 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   credentials: true,
 }));
-
-// ✅ Handle preflight requests
-app.options('*', cors());
     // Body parsing middleware
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
