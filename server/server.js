@@ -91,9 +91,9 @@ app.options('*', cors({
     });
 
     // API routes
-    app.use('/api/auth', authRoutes);
-    app.use('/api/tasks', taskRoutes);
-    app.use('/api/admin', adminRoutes);
+    app.use('/api/auth', cors(), authRoutes);
+    app.use('/api/tasks', cors(), taskRoutes);
+    app.use('/api/admin', cors(), adminRoutes);
 
     // 404 handler
     app.use('*', (req, res) => {
