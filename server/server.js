@@ -42,14 +42,28 @@ function createApp() {
     app.use(limiter);
 
     // CORS configuration - Allow development and production ports
-    app.use(cors({
-      origin: [
-        'https://3ddxtaskmanager.netlify.app',        // http://localhost:8080
-      ].filter(Boolean),
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      credentials: true,
-    }));
+   const allowedOrigins = [
+  'https://3ddxtaskmanager.netlify.app', // Netlify
+  'http://localhost:8080',               // Vue CLI
+  'http://localhost:5173'                // Vite
+];
 
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('CORS not allowed'), false);
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  credentials: true,
+}));
+
+// ✅ Handle preflight requests
+app.options('*', cors());
     // Body parsing middleware
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
