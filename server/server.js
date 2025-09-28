@@ -42,9 +42,15 @@ function createApp() {
     app.use(limiter);
 
     // CORS configuration
+    // app.use(cors({
+    //     origin: process.env.CLIENT_URL || 'http://localhost:8080',
+    //     credentials: true
+    // }));
+    // ✅ allow your frontend Netlify domain
     app.use(cors({
-        origin: process.env.CLIENT_URL || 'http://localhost:8080',
-        credentials: true
+      origin: "https://3ddxtaskmanager.netlify.app",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      credentials: true,
     }));
 
     // Body parsing middleware
