@@ -44,7 +44,7 @@ function createApp() {
     // CORS configuration - Allow development and production ports
     app.use(cors({
       origin: [
-        process.env.CLIENT_URL,        // http://localhost:8080
+        'https://3ddxtaskmanager.netlify.app',        // http://localhost:8080
       ].filter(Boolean),
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: true,
