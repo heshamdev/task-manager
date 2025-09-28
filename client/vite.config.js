@@ -9,7 +9,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:4002',
+        target: 'https://task-manager-q8bv.onrender.com/',
         changeOrigin: true,
         secure: false
       }
