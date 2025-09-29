@@ -32,16 +32,53 @@ const adminRoutes = require('./routes/admin');
 function createApp() {
     const app = express();
      // CORS configuration - Allow development and production ports
-    app.use(cors({
-      origin: [
-        process.env.CLIENT_URL,        // http://localhost:8080
+    const allowedOrigins = [
+        process.env.CLIENT_URL,        // Environment variable for client URL
         'http://localhost:8080',       // Primary development frontend
         'https://3ddxtaskmanager.netlify.app',  // Production Netlify frontend
-      ].filter(Boolean),
+        'https://3ddx-task-manager.netlify.app', // Alternative Netlify domain
+    ].filter(Boolean);
+
+    // Log allowed origins for debugging
+    console.log('🌐 CORS Allowed Origins:', allowedOrigins);
+
+    const corsOptions = {
+      origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+          console.log(`✅ CORS: Allowing origin ${origin}`);
+          callback(null, true);
+        } else {
+          console.log(`❌ CORS: Blocking origin ${origin}`);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'X-Current-View'
+      ],
       credentials: true,
-    }));
-    app.options('*', cors());
+      optionsSuccessStatus: 200
+    };
+
+    app.use(cors(corsOptions));
+
+    // Handle preflight requests explicitly
+    app.options('*', cors(corsOptions));
+
+    // Additional CORS debugging middleware
+    app.use((req, res, next) => {
+        const origin = req.headers.origin;
+        if (origin) {
+            console.log(`🔍 Request from origin: ${origin} to ${req.method} ${req.path}`);
+        }
+        next();
+    });
     // Security middleware
     app.use(helmet());
     
