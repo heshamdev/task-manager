@@ -82,12 +82,29 @@ function createApp() {
     // Security middleware
     app.use(helmet());
     
-    // Rate limiting - more generous for development
+    // Rate limiting - configurable via environment variables
+    const rateLimitWindowMinutes = parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES) || 15;
+    const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX) ||
+        (process.env.NODE_ENV === 'development' ? 1000 : 500);
+
     const limiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: process.env.NODE_ENV === 'development' ? 500 : 100, // Higher limit for development
-        message: 'Too many requests from this IP, please try again later.'
+        windowMs: rateLimitWindowMinutes * 60 * 1000, // Configurable window
+        max: rateLimitMax, // Configurable max requests
+        message: {
+            success: false,
+            message: 'Too many requests from this IP, please try again later.',
+            retryAfter: `${rateLimitWindowMinutes} minutes`
+        },
+        standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+        legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+        // Skip rate limiting for specific paths
+        skip: (req) => {
+            // Skip rate limiting for health checks and static assets
+            return req.path === '/health' || req.path.startsWith('/static');
+        }
     });
+
+    console.log(`🛡️  Rate limiting: ${rateLimitMax} requests per ${rateLimitWindowMinutes} minutes`);
     app.use(limiter);
 
     // Body parsing middleware
@@ -166,8 +183,8 @@ async function startServer(port = process.env.PORT || 3000) {
         // Connect to database
         await connectDB();
 
-        // Start the scheduler for expired tasks
-        scheduler.startScheduler(60); // Run every 60 minutes
+        // Start the enhanced scheduler for expired tasks with intelligent frequency
+        scheduler.startScheduler(30); // Base interval: 30 minutes (adaptive scheduling will adjust based on due dates)
 
         // Create and start the app
         const app = createApp();

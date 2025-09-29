@@ -11,6 +11,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { validateTaskCreation, validateTaskUpdate } = require('../middleware/validation');
 const logger = require('../utils/logger');
 const { logRequestAction } = require('../middleware/logging');
+const { triggerImmediateCheck } = require('../utils/scheduler');
 
 const router = express.Router();
 
@@ -392,10 +393,21 @@ router.post('/', validateTaskCreation, async (req, res) => {
 
         await task.save();
 
+        // Trigger immediate due date check if task has a due date
+        if (task.dueDate) {
+            try {
+                await triggerImmediateCheck();
+                logger.info(`Triggered immediate due date check after creating task: ${task.title}`);
+            } catch (error) {
+                logger.error('Failed to trigger immediate due date check after task creation:', error);
+            }
+        }
+
         // Log task creation with enhanced logging
         await logRequestAction(req, 'CREATE_TASK', {
             taskId: task._id.toString(),
-            title: task.title
+            title: task.title,
+            hasDueDate: !!task.dueDate
         });
 
         res.status(201).json({
@@ -480,11 +492,22 @@ router.put('/:id', validateTaskUpdate, async (req, res) => {
             });
         }
 
+        // Trigger immediate due date check if due date was updated
+        if (updateData.dueDate !== undefined) {
+            try {
+                await triggerImmediateCheck();
+                logger.info(`Triggered immediate due date check after updating task: ${task.title}`);
+            } catch (error) {
+                logger.error('Failed to trigger immediate due date check after task update:', error);
+            }
+        }
+
         // Log task update with enhanced logging
         await logRequestAction(req, 'UPDATE_TASK', {
             taskId: task._id.toString(),
             title: task.title,
-            updatedFields: Object.keys(updateData)
+            updatedFields: Object.keys(updateData),
+            dueDateUpdated: updateData.dueDate !== undefined
         });
 
         res.json({

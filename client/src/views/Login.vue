@@ -55,12 +55,14 @@
               
               <v-btn
                 type="submit"
+                :loading="isLoading"
+                :disabled="isLoading"
                 color="primary"
                 size="large"
                 block
                 class="mb-4"
               >
-                {{ $t('auth.login') }}
+                {{ isLoading ? 'Logging in...' : $t('auth.login') }}
               </v-btn>
               
               <v-alert v-if="error" type="error" class="mb-4">
@@ -107,6 +109,7 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const showPassword = ref(false)
+const isLoading = ref(false)
 
 function togglePasswordVisibility() {
   showPassword.value = !showPassword.value
@@ -118,7 +121,11 @@ async function onSubmit(values, { setErrors }, event) {
     event.preventDefault()
   }
 
+  // Prevent multiple submissions
+  if (isLoading.value) return
+
   error.value = ''
+  isLoading.value = true
   // Show loading overlay
   let loader = showLoader({
     message: 'Verifying your credentials...\nPlease wait while we securely authenticate your account.',
@@ -194,6 +201,9 @@ async function onSubmit(values, { setErrors }, event) {
       error.value = errorMessage
     }
   } finally {
+    // Reset loading state
+    isLoading.value = false
+
     // Hide loading overlay safely
     try {
       if (loader && loader.isVisible()) {

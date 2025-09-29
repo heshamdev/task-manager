@@ -11,6 +11,7 @@
           icon
           elevation="8"
           @click="openCreateDialog"
+          :disabled="isCreatingTask"
         >
           <v-icon size="large">mdi-plus</v-icon>
         </v-btn>
@@ -258,6 +259,8 @@
                       variant="text"
                       @click="toggle(task)"
                       :title="task.status === 'completed' ? $t('tasks.markActive') : $t('tasks.markComplete')"
+                      :loading="isTogglingTask[task._id]"
+                      :disabled="isTogglingTask[task._id]"
                     />
                     <v-btn
                       icon="mdi-pencil"
@@ -265,6 +268,7 @@
                       variant="text"
                       @click="editTask(task)"
                       :title="$t('tasks.editTask')"
+                      :disabled="isDeletingTask || isTogglingTask[task._id]"
                     />
                     <v-btn
                       icon="mdi-delete"
@@ -272,6 +276,8 @@
                       variant="text"
                       @click="deleteTask(task)"
                       :title="$t('tasks.deleteTask')"
+                      :loading="isDeletingTask"
+                      :disabled="isDeletingTask || isTogglingTask[task._id]"
                     />
                   </div>
                 </template>
@@ -410,8 +416,13 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" @click="deleteTask(selectedTask)">
-            {{ $t('common.delete') }}
+          <v-btn
+            color="error"
+            @click="deleteTask(selectedTask)"
+            :loading="isDeletingTask"
+            :disabled="isDeletingTask"
+          >
+            {{ isDeletingTask ? $t('common.deleting') : $t('common.delete') }}
           </v-btn>
           <v-btn color="grey-darken-1" variant="text" @click="showTaskDetails = false">
             {{ $t('common.close') }}
@@ -518,8 +529,8 @@
             color="primary"
             type="submit"
             form="create-task-form"
-            :loading="isLoadingTasks"
-            :disabled="isLoadingTasks"
+            :loading="isCreatingTask"
+            :disabled="isCreatingTask"
           >
             {{ $t('tasks.createTask') }}
           </v-btn>
@@ -657,6 +668,9 @@ const editForm = reactive({ title: '', description: '', dueDate: '', priority: '
 const editError = ref('')
 const isUpdatingTask = ref(false)
 const taskBeingEdited = ref(null)
+const isDeletingTask = ref(false)
+const isCreatingTask = ref(false)
+const isTogglingTask = ref({})
 const filters = reactive({
   search: '',
   status: '',
@@ -1057,6 +1071,10 @@ async function fetchStats() {
 async function createTask(values, { resetForm, setErrors }) {
   formError.value = ''
 
+  if (isCreatingTask.value) return
+
+  isCreatingTask.value = true
+
   try {
     const { data } = await api.post('/api/tasks', {
       title: values.title,
@@ -1103,6 +1121,8 @@ async function createTask(values, { resetForm, setErrors }) {
 
     // Show general error if no specific field errors
     formError.value = error.response?.data?.message || $t('errors.serverError') || 'Failed to create task'
+  } finally {
+    isCreatingTask.value = false
   }
 }
 
@@ -1115,6 +1135,10 @@ function handleTaskToggle(task, newValue) {
 }
 
 async function toggle(t) {
+  if (isTogglingTask.value[t._id]) return
+
+  isTogglingTask.value[t._id] = true
+
   try {
     await api.patch(`/api/tasks/${t._id}/toggle`)
     await fetchTasks()
@@ -1122,10 +1146,16 @@ async function toggle(t) {
   } catch (error) {
     console.error('Toggle task error:', error)
     console.error('Error details:', error.response?.data)
+  } finally {
+    isTogglingTask.value[t._id] = false
   }
 }
 
 async function deleteTask(t) {
+  if (isDeletingTask.value) return
+
+  isDeletingTask.value = true
+
   try {
     await api.delete(`/api/tasks/${t._id}`)
     showTaskDetails.value = false
@@ -1139,6 +1169,8 @@ async function deleteTask(t) {
     await fetchStats()
   } catch (error) {
     console.error('Delete task error:', error)
+  } finally {
+    isDeletingTask.value = false
   }
 }
 
