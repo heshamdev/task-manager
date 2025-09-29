@@ -63,7 +63,6 @@
             <v-select
               v-model="filters.priority"
               :label="$t('tasks.filterByPriority')"
-              :placeholder="$t('common.selectPriority')"
               :items="priorityOptions"
               item-title="text"
               item-value="value"
@@ -73,7 +72,6 @@
               clearable
               class="mb-3"
               @update:model-value="applyFilters"
-              persistent-placeholder
             />
 
             <!-- Date Filter -->
@@ -502,7 +500,6 @@
               <v-select
                 v-bind="field"
                 :label="$t('common.priority')"
-                :placeholder="$t('common.selectPriority')"
                 :items="priorityOptions"
                 item-title="text"
                 item-value="value"
@@ -510,7 +507,6 @@
                 variant="outlined"
                 :error-messages="errorMessage"
                 class="mb-4"
-                persistent-placeholder
               />
             </VeeField>
 
@@ -607,7 +603,6 @@
               <v-select
                 v-model="editForm.priority"
                 :label="$t('common.priority')"
-                :placeholder="$t('common.selectPriority')"
                 :items="priorityOptions"
                 item-title="text"
                 item-value="value"
@@ -615,7 +610,6 @@
                 variant="outlined"
                 :error-messages="errorMessage"
                 class="mb-4"
-                persistent-placeholder
               />
             </VeeField>
 
@@ -891,12 +885,17 @@ function formatDateTime(dateString) {
 function getDueDateUrgency(dateString) {
   if (!dateString) return 'none'
 
-  const date = new Date(dateString)
+  const dueDate = new Date(dateString)
   const today = new Date()
-  const diffTime = date - today
+
+  // Get date-only comparison (no time)
+  const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+  const diffTime = dueDateOnly - todayOnly
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 0) return 'overdue'
+  if (diffDays < 0) return 'overdue' // Only overdue if due date was before today
   if (diffDays === 0) return 'today'
   if (diffDays === 1) return 'tomorrow'
   if (diffDays <= 3) return 'soon'

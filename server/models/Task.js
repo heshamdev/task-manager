@@ -191,9 +191,12 @@ taskSchema.statics.getTaskStats = async function(userId) {
  */
 taskSchema.statics.updateOverdueTasks = async function(userId = null) {
     const now = new Date();
+    // Set to start of today to only mark tasks overdue after their due date has fully passed
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const query = {
         status: 'active',
-        dueDate: { $ne: null, $lt: now }
+        dueDate: { $ne: null, $lt: startOfToday }
     };
 
     // If userId is provided, filter by user
@@ -222,7 +225,14 @@ taskSchema.virtual('isOverdue').get(function() {
     if (!this.dueDate || this.status === 'completed') {
         return false;
     }
-    return new Date() > this.dueDate;
+
+    const now = new Date();
+    const dueDate = new Date(this.dueDate);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+
+    // Only overdue if due date is before today (not same day)
+    return dueDateOnly < startOfToday;
 });
 
 /**
