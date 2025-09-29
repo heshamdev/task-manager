@@ -160,7 +160,12 @@ function toggleConfirmPasswordVisibility() {
   showConfirmPassword.value = !showConfirmPassword.value
 }
 
-async function onSubmit(values, { setErrors }) {
+async function onSubmit(values, { setErrors }, event) {
+  // Prevent default form submission
+  if (event && event.preventDefault) {
+    event.preventDefault()
+  }
+
   error.value = ''
   
   // Show loading overlay
@@ -201,9 +206,7 @@ async function onSubmit(values, { setErrors }) {
     
     router.push('/tasks')
   } catch (e) {
-    console.error('Registration error:', e)
-    console.error('Error response:', e?.response?.data)
-    console.error('Error status:', e?.response?.status)
+    // Handle registration errors silently - errors are shown to user via UI
     
     // Check if it's a validation error (field-specific errors)
     if (e?.response?.status === 400 && e?.response?.data?.validationFailed && e?.response?.data?.errors) {
@@ -247,7 +250,7 @@ async function onSubmit(values, { setErrors }) {
         loader.hide()
       }
     } catch (hideError) {
-      console.warn('Error hiding loader:', hideError)
+      // Silently handle loader hide errors
     }
   }
 }</script>

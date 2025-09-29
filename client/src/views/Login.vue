@@ -112,9 +112,13 @@ function togglePasswordVisibility() {
   showPassword.value = !showPassword.value
 }
 
-async function onSubmit(values, { setErrors }) {
+async function onSubmit(values, { setErrors }, event) {
+  // Prevent default form submission
+  if (event && event.preventDefault) {
+    event.preventDefault()
+  }
+
   error.value = ''
-  
   // Show loading overlay
   let loader = showLoader({
     message: 'Verifying your credentials...\nPlease wait while we securely authenticate your account.',
@@ -151,7 +155,8 @@ async function onSubmit(values, { setErrors }) {
     
     router.push('/tasks')
   } catch (e) {
-    console.error('Login error:', e)
+    
+    // Handle authentication errors silently - errors are shown to user via UI
     
     // Check if it's a validation error (field-specific errors)
     if (e?.response?.status === 400 && e?.response?.data?.validationFailed && e?.response?.data?.errors) {
@@ -195,7 +200,7 @@ async function onSubmit(values, { setErrors }) {
         loader.hide()
       }
     } catch (hideError) {
-      console.warn('Error hiding loader:', hideError)
+      // Silently handle loader hide errors
     }
   }
 }</script>
